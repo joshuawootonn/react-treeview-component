@@ -1,86 +1,132 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
+import { AnimatePresence, motion } from "framer-motion";
+import { initialValue } from "lib/initialValue";
+import { TreeViewContext } from "lib/treeContext";
+import { MyTreeNode } from "lib/types";
+import type { NextPage } from "next";
+import { useContext, useState } from "react";
+import { File, Folder } from "../components/icons";
 
-const Home: NextPage = () => {
+function TreeNode({ node }: { node?: MyTreeNode }) {
+  if (node == null) return null;
+
+  const { arr, obj, updateNode, getChildren } = useContext(TreeViewContext);
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
+    <div
+      role="treeitem"
+      key={node.id + "div"}
+      onClick={(e) => {
+        e.stopPropagation();
+        return updateNode({ ...node, isExpanded: !node.isExpanded });
+      }}
+      className="cursor-pointer select-none flex flex-col"
+      aria-expanded={getChildren(node).length > 0 && node.isExpanded}
+    >
+      <div className="flex flex-row items-center">
+        {node.isFolder ? (
+          <Folder isExpanded={node.isExpanded} className="h-4 w-4 mr-2 mb-1" />
+        ) : (
+          <File className="h-4 w-4 mr-2 mb-1" />
+        )}
+        {node.name}
+      </div>
+      <AnimatePresence initial={false}>
+        {node.isExpanded && (
+          <motion.ul
+            key={node.id + "ul"}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{
+              height: "auto",
+              opacity: 1,
+              transition: {
+                height: {
+                  duration: 0.25,
+                },
+                opacity: {
+                  duration: 0.2,
+                  delay: 0.05,
+                },
+              },
+            }}
+            exit={{
+              height: 0,
+              opacity: 0,
+              transition: {
+                height: {
+                  duration: 0.25,
+                },
+                opacity: {
+                  duration: 0.2,
+                },
+              },
+            }}
+            className="[&>li]:pl-3"
           >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
+            {arr.map((id) => {
+              const curr = obj[id];
+              if (curr.parentId !== node.id) return;
+              console.log(curr);
 
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
+              return (
+                <motion.li key={node.id + curr.id + "li"}>
+                  <TreeNode node={curr} />
+                </motion.li>
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default Home
+const Home: NextPage = () => {
+  const [value, setValue] = useState(() => {
+    return {
+      rootId: initialValue.find((curr) => curr.parentId == null)?.id ?? "0",
+      arr: initialValue.map((curr) => curr.id),
+      obj: initialValue.reduce(
+        (acc, curr) => ({ ...acc, [curr.id]: curr }),
+        {}
+      ) as Record<string, MyTreeNode>,
+    };
+  });
+
+  return (
+    <motion.div className="flex flex-col justify-start items-start p-12">
+      <ul role="tree" aria-label="File Manager" aria-multiselectable="false">
+        <TreeViewContext.Provider
+          value={{
+            ...value,
+            updateNode: (node: MyTreeNode) => {
+              setValue((prev) => ({
+                ...prev,
+                obj: { ...prev.obj, [node.id]: node },
+              }));
+            },
+            getChildren: (node: MyTreeNode) => {
+              return value.arr
+                .map((id) => value.obj[id])
+                .filter((treeNode) => treeNode.parentId === node.id);
+            },
+          }}
+        >
+          {value.arr.map((id) => {
+            if (value.obj[id].parentId != null) {
+              return null;
+            }
+            return (
+              <li>
+                <TreeNode node={value.obj[id]} />
+              </li>
+            );
+          })}
+        </TreeViewContext.Provider>
+      </ul>
+      <p>content</p>
+      <button> nice</button>
+    </motion.div>
+  );
+};
+
+export default Home;
