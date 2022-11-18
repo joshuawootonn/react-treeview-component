@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { initialValue } from "lib/initialValue";
-import { TreeViewContext } from "lib/treeContext";
+import { TreeViewContext, TreeViewProvider } from "lib/treeContext";
 import { MyTreeNode } from "lib/types";
 import type { NextPage } from "next";
 import { useContext, useState } from "react";
@@ -94,23 +94,8 @@ const Home: NextPage = () => {
 
   return (
     <motion.div className="flex flex-col justify-start items-start p-12">
-      <ul role="tree" aria-label="File Manager" aria-multiselectable="false">
-        <TreeViewContext.Provider
-          value={{
-            ...value,
-            updateNode: (node: MyTreeNode) => {
-              setValue((prev) => ({
-                ...prev,
-                obj: { ...prev.obj, [node.id]: node },
-              }));
-            },
-            getChildren: (node: MyTreeNode) => {
-              return value.arr
-                .map((id) => value.obj[id])
-                .filter((treeNode) => treeNode.parentId === node.id);
-            },
-          }}
-        >
+      <TreeViewProvider>
+        <ul role="tree" aria-label="File Manager" aria-multiselectable="false">
           {value.arr.map((id) => {
             if (value.obj[id].parentId != null) {
               return null;
@@ -121,8 +106,8 @@ const Home: NextPage = () => {
               </li>
             );
           })}
-        </TreeViewContext.Provider>
-      </ul>
+        </ul>
+      </TreeViewProvider>
       <p>content</p>
       <button> nice</button>
     </motion.div>
