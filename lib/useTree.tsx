@@ -4,9 +4,9 @@ import React, {
   useLayoutEffect,
 } from "react";
 import {
+  TreeActionTypes,
   getNextFocusableNode,
   getPreviousFocusableNode,
-  TreeType,
   TreeViewContext,
   TreeViewContextType,
 } from "./treeContext";
@@ -31,14 +31,18 @@ export function useTreeView(
 
   useLayoutEffect(() => {
     dispatch({
-      type: isRoot ? "REGISTER_ROOT_NODE" : "REGISTER_NODE",
+      type: isRoot
+        ? TreeActionTypes.REGISTER_ROOT_NODE
+        : TreeActionTypes.REGISTER_NODE,
       id,
       childrenIds,
     });
 
     return () => {
       dispatch({
-        type: isRoot ? "DEREGISTER_ROOT_NODE" : "DEREGISTER_NODE",
+        type: isRoot
+          ? TreeActionTypes.DEREGISTER_ROOT_NODE
+          : TreeActionTypes.DEREGISTER_NODE,
         id,
         childrenIds,
       });
@@ -48,10 +52,10 @@ export function useTreeView(
   return {
     isOpen: isOpen.get(id) ?? false,
     open: function () {
-      dispatch({ type: "SET_OPEN", id });
+      dispatch({ type: TreeActionTypes.OPEN, id });
     },
     close: function () {
-      dispatch({ type: "SET_CLOSED", id });
+      dispatch({ type: TreeActionTypes.CLOSE, id });
     },
     isFocused: state.focusedId === id,
     isSelected: state.selectedId === id,
@@ -71,58 +75,52 @@ export function useTreeView(
 
           if (isFolder) {
             isOpen.get(id)
-              ? dispatch({ type: "SET_CLOSED", id })
-              : dispatch({ type: "SET_OPEN", id });
+              ? dispatch({ type: TreeActionTypes.CLOSE, id })
+              : dispatch({ type: TreeActionTypes.OPEN, id });
           }
 
-          dispatch({ type: "SELECT", id });
-          console.log("select", id);
+          dispatch({ type: TreeActionTypes.SELECT, id });
         }
       },
       onKeyDown: function (event: React.KeyboardEvent) {
         event.stopPropagation();
         if (isHotkey("up", event)) {
-          //   console.log("up");
           const prevId = getPreviousFocusableNode(state, id);
-          //   console.log({ prevId });
-          dispatch({ type: "SET_FOCUSABLE", id: prevId });
+          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
           elements.current.get(prevId)?.focus();
         }
 
         if (isHotkey("down", event)) {
-          console.log("down", event);
           const nextId = getNextFocusableNode(state, id);
-          console.log({ nextId });
-          dispatch({ type: "SET_FOCUSABLE", id: nextId });
+          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
           elements.current.get(nextId)?.focus();
         }
 
         if (isHotkey("left", event)) {
-          dispatch({ type: "SET_CLOSED", id });
+          dispatch({ type: TreeActionTypes.CLOSE, id });
         }
 
         if (isHotkey("right", event)) {
-          dispatch({ type: "SET_OPEN", id });
+          dispatch({ type: TreeActionTypes.OPEN, id });
         }
 
-        console.log({ isFolder, selectedId: state.selectedId, id });
         if (!isFolder && isHotkey("space", event)) {
-          dispatch({ type: "SELECT", id });
+          dispatch({ type: TreeActionTypes.SELECT, id });
         }
+
         if (isFolder && isHotkey("space", event)) {
           isOpen.get(id)
-            ? dispatch({ type: "SET_CLOSED", id })
-            : dispatch({ type: "SET_OPEN", id });
+            ? dispatch({ type: TreeActionTypes.OPEN, id })
+            : dispatch({ type: TreeActionTypes.CLOSE, id });
         }
       },
       onFocus: function (event: React.FocusEvent) {
         event.stopPropagation();
-        dispatch({ type: "ON_FOCUS", id });
-        console.log("focus", id);
+        dispatch({ type: TreeActionTypes.FOCUS, id });
       },
       onBlur: function (event: React.FocusEvent) {
         event.stopPropagation();
-        dispatch({ type: "ON_BLUR", id });
+        dispatch({ type: TreeActionTypes.BLUR, id });
       },
     }),
   };

@@ -47,30 +47,48 @@ type ReducerState = {
   selectedId?: string | null;
 };
 
+export enum TreeActionTypes {
+  REGISTER_ROOT_NODE = "REGISTER_ROOT_NODE",
+  DEREGISTER_ROOT_NODE = "DEREGISTER_ROOT_NODE",
+  REGISTER_NODE = "REGISTER_NODE",
+  DEREGISTER_NODE = "DEREGISTER_NODE",
+  FOCUS = "FOCUS",
+  BLUR = "BLUR",
+  SELECT = "SELECT",
+  UNSELECT = "UNSELECT",
+  SET_FOCUSABLE = "SET_FOCUSABLE",
+  OPEN = "OPEN",
+  CLOSE = "CLOSE",
+}
+
 type Actions =
   | {
-      type: "REGISTER_NODE";
+      type: TreeActionTypes.REGISTER_ROOT_NODE;
       id: string;
       childrenIds: string[];
     }
-  | { type: "DEREGISTER_NODE"; id: string; childrenIds: string[] }
-  | { type: "ON_FOCUS"; id: string }
-  | { type: "ON_BLUR"; id: string }
-  | { type: "SELECT"; id: string }
-  | { type: "UNSELECT"; id: string }
-  | { type: "SET_FOCUSABLE"; id: string }
   | {
-      type: "REGISTER_ROOT_NODE";
+      type: TreeActionTypes.DEREGISTER_ROOT_NODE;
       id: string;
       childrenIds: string[];
     }
-  | { type: "DEREGISTER_ROOT_NODE"; id: string; childrenIds: string[] }
   | {
-      type: "SET_OPEN";
+      type: TreeActionTypes.REGISTER_NODE;
+      id: string;
+      childrenIds: string[];
+    }
+  | { type: TreeActionTypes.DEREGISTER_NODE; id: string; childrenIds: string[] }
+  | { type: TreeActionTypes.FOCUS; id: string }
+  | { type: TreeActionTypes.BLUR; id: string }
+  | { type: TreeActionTypes.SELECT; id: string }
+  | { type: TreeActionTypes.UNSELECT; id: string }
+  | { type: TreeActionTypes.SET_FOCUSABLE; id: string }
+  | {
+      type: TreeActionTypes.OPEN;
       id: string;
     }
   | {
-      type: "SET_CLOSED";
+      type: TreeActionTypes.CLOSE;
       id: string;
     };
 
@@ -82,13 +100,14 @@ export function getNextFocusableNode(
     const isCurrentOpen = state.isOpen.get(id);
     const currentChildren = state.children.get(id);
 
-    // console.log(id, { isCurrentOpen, currentChildren });
+    console.log(id, { isCurrentOpen, currentChildren });
 
     if (
       isCurrentOpen &&
       currentChildren &&
       (currentChildren?.length ?? 0) > 0
     ) {
+      console.log({ originalId, id, prevId });
       //enter child @ 0
       if (originalId == id) {
         return currentChildren?.at(0) ?? id;
@@ -112,7 +131,7 @@ export function getNextFocusableNode(
       let nextRootNodeId = arr[index + 1];
       // console.log({ nextRootNodeId });
 
-      if (nextRootNodeId == null) return id;
+      if (nextRootNodeId == null) return originalId;
 
       return nextRootNodeId;
     }
@@ -191,13 +210,10 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
     nextChildren: MyMap<string, string[]>,
     nextParent: MyMap<string, string>;
 
-  let arr: any, index: any, nextRootNodeId: any;
   switch (action.type) {
-    case "REGISTER_ROOT_NODE":
+    case TreeActionTypes.REGISTER_ROOT_NODE:
       nextRootNodeIds = new Set(state.rootNodeIds);
       nextRootNodeIds.add(action.id);
-
-      // console.log({ registeringRoot: action.id, size: state.rootNodeIds.size });
 
       const isFirstNode = state.rootNodeIds.size === 0;
       nextFocusableId = isFirstNode ? action.id : state.focusableId;
@@ -218,7 +234,8 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         children: nextChildren,
         parent: nextParent,
       };
-    case "DEREGISTER_ROOT_NODE":
+
+    case TreeActionTypes.DEREGISTER_ROOT_NODE:
       nextRootNodeIds = new Set(state.rootNodeIds);
       nextRootNodeIds.delete(action.id);
 
@@ -226,23 +243,8 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         ...state,
         rootNodeIds: nextRootNodeIds,
       };
-    case "ON_FOCUS":
-      return {
-        ...state,
-        focusedId: action.id,
-      };
-    case "ON_BLUR":
-      return {
-        ...state,
-        focusedId: state.focusedId === action.id ? null : state.focusedId,
-      };
-    case "SET_FOCUSABLE":
-      return {
-        ...state,
-        focusableId: action.id,
-      };
 
-    case "REGISTER_NODE":
+    case TreeActionTypes.REGISTER_NODE:
       nextChildren = new MyMap(state.children).set(
         action.id,
         action.childrenIds
@@ -258,31 +260,54 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         children: nextChildren,
         parent: nextParent,
       };
-    case "DEREGISTER_NODE":
+
+    case TreeActionTypes.DEREGISTER_NODE:
       return state;
 
-    case "SET_OPEN":
+    case TreeActionTypes.FOCUS:
+      return {
+        ...state,
+        focusedId: action.id,
+      };
+
+    case TreeActionTypes.BLUR:
+      return {
+        ...state,
+        focusedId: state.focusedId === action.id ? null : state.focusedId,
+      };
+
+    case TreeActionTypes.SET_FOCUSABLE:
+      return {
+        ...state,
+        focusableId: action.id,
+      };
+
+    case TreeActionTypes.OPEN:
       return {
         ...state,
         isOpen: new MyMap(state.isOpen).replace(action.id, true),
       };
-    case "SET_CLOSED":
+
+    case TreeActionTypes.CLOSE:
       return {
         ...state,
         isOpen: new MyMap(state.isOpen).replace(action.id, false),
       };
-    case "SELECT":
+
+    case TreeActionTypes.SELECT:
       return {
         ...state,
         selectedId: action.id,
       };
-    case "UNSELECT":
+
+    case TreeActionTypes.UNSELECT:
       return {
         ...state,
         selectedId: null,
       };
+
     default:
-      throw new Error();
+      throw new Error("Reducer received an unknown action");
   }
 }
 
