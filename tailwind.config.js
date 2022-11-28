@@ -9,8 +9,10 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Josefin Sans", ...defaultTheme.fontFamily.sans],
+        mono: ["Fira Code", ...defaultTheme.fontFamily.mono],
       },
       colors: {
+        gray: defaultTheme.colors.slate,
         pink: "#FE65B7",
         blue: "#446DF6",
         orange: "#FBB02D",

@@ -1,4 +1,5 @@
 import classNames from "classnames";
+import { motion } from "framer-motion";
 type Props = { isExpanded?: boolean; className?: string };
 
 export function Folder({ isExpanded, className }: Props) {
@@ -8,7 +9,7 @@ export function Folder({ isExpanded, className }: Props) {
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        strokeWidth="2"
+        strokeWidth="1.6"
         stroke="currentColor"
         className={classNames("h-3.5 w-3.5", className)}
       >
@@ -26,7 +27,7 @@ export function Folder({ isExpanded, className }: Props) {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
-      strokeWidth="2"
+      strokeWidth="1.6"
       stroke="currentColor"
       className={classNames("h-3.5 w-3.5", className)}
     >
@@ -45,7 +46,7 @@ export function File({ className }: Props) {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
-      strokeWidth="2"
+      strokeWidth="1.6"
       stroke="currentColor"
       className={classNames("h-3.5 w-3.5", className)}
     >
@@ -55,5 +56,31 @@ export function File({ className }: Props) {
         d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
       />
     </svg>
+  );
+}
+
+export function Arrow({ isExpanded, className }: Props) {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className={classNames("h-3.5 w-3.5 origin-center", className)}
+      initial={false}
+      animate={{ rotate: isExpanded ? 90 : 0 }}
+      style={{ originX: "8px", originY: "8px" }}
+      transition={{
+        duration: 0.25,
+        ease: [0.164, 0.84, 0.43, 1],
+      }}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8.25 4.5l7.5 7.5-7.5 7.5"
+      />
+    </motion.svg>
   );
 }

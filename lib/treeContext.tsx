@@ -20,6 +20,8 @@ function getInitialState(): ReducerState {
     isOpen: new MyMap<string, boolean>(),
     children: new MyMap<string, string[]>(),
     parent: new MyMap<string, string>(),
+    focusableId: null,
+    focusedId: null,
   };
 }
 
@@ -37,7 +39,8 @@ export type TreeViewContextType = TreeType & {
 type ReducerState = {
   rootNodeIds: Set<string>;
   isOpen: MyMap<string, boolean>;
-  focusableId?: string;
+  focusableId?: string | null;
+  focusedId?: string | null;
   children: MyMap<string, string[]>;
   parent: MyMap<string, string>;
 };
@@ -49,7 +52,9 @@ type Actions =
       childrenIds: string[];
     }
   | { type: "DEREGISTER_NODE"; id: string; childrenIds: string[] }
-  | { type: "FOCUS"; id: string }
+  | { type: "ON_FOCUS"; id: string }
+  | { type: "ON_BLUR"; id: string }
+  | { type: "SET_FOCUSABLE"; id: string }
   | {
       type: "REGISTER_ROOT_NODE";
       id: string;
@@ -57,11 +62,17 @@ type Actions =
     }
   | { type: "DEREGISTER_ROOT_NODE"; id: string; childrenIds: string[] }
   | {
-      type: "TOGGLE_OPEN";
+      type: "SET_OPEN";
+      id: string;
+    }
+  | {
+      type: "SET_CLOSED";
       id: string;
     };
-
-export function getNextFocusableNode(state: ReducerState, originalId: string) {
+export function getNextFocusableNode(
+  state: ReducerState,
+  originalId: string
+): string {
   function traverse(id: string, prevId?: string): string {
     const isCurrentOpen = state.isOpen.get(id);
     const currentChildren = state.children.get(id);
@@ -97,6 +108,7 @@ export function getNextFocusableNode(state: ReducerState, originalId: string) {
       // console.log({ nextRootNodeId });
 
       if (nextRootNodeId == null) return id;
+
       return nextRootNodeId;
     }
 
@@ -115,7 +127,7 @@ export function getNextFocusableNode(state: ReducerState, originalId: string) {
 export function getPreviousFocusableNode(
   state: ReducerState,
   originalId: string
-) {
+): string {
   const parent = state.parent.get(originalId);
   if (parent) {
     const siblingNodes = state.children.get(parent);
@@ -138,14 +150,17 @@ export function getPreviousFocusableNode(
         );
       }
     }
-  } else {
-    let arr = Array.from(state.rootNodeIds);
-    let index = arr.findIndex((ele: any) => originalId === ele);
-    let nextRootNodeId = arr[index - 1];
-
-    if (nextRootNodeId == null) return originalId;
-    return nextRootNodeId;
   }
+  let arr = Array.from(state.rootNodeIds);
+  let index = arr.findIndex((ele: any) => originalId === ele);
+  let prevRootNodeId = arr[index - 1];
+
+  if (prevRootNodeId == null) return originalId;
+
+  if (state.isOpen.get(prevRootNodeId) == true) {
+    return traverse(prevRootNodeId);
+  }
+  return prevRootNodeId;
 
   function traverse(id: string): string {
     console.log(id);
@@ -167,7 +182,7 @@ export function getPreviousFocusableNode(
 
 function reducer(state: ReducerState, action: Actions): ReducerState {
   let nextRootNodeIds: Set<string>;
-  let nextFocusableId: string | undefined,
+  let nextFocusableId: string | undefined | null,
     nextChildren: MyMap<string, string[]>,
     nextParent: MyMap<string, string>;
 
@@ -206,8 +221,17 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         ...state,
         rootNodeIds: nextRootNodeIds,
       };
-
-    case "FOCUS":
+    case "ON_FOCUS":
+      return {
+        ...state,
+        focusedId: action.id,
+      };
+    case "ON_BLUR":
+      return {
+        ...state,
+        focusedId: state.focusedId === action.id ? null : state.focusedId,
+      };
+    case "SET_FOCUSABLE":
       return {
         ...state,
         focusableId: action.id,
@@ -232,11 +256,15 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
     case "DEREGISTER_NODE":
       return state;
 
-    case "TOGGLE_OPEN":
-      const isOpen = state.isOpen.get(action.id);
+    case "SET_OPEN":
       return {
         ...state,
-        isOpen: new MyMap(state.isOpen).replace(action.id, !isOpen),
+        isOpen: new MyMap(state.isOpen).replace(action.id, true),
+      };
+    case "SET_CLOSED":
+      return {
+        ...state,
+        isOpen: new MyMap(state.isOpen).replace(action.id, false),
       };
     default:
       throw new Error();

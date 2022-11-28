@@ -1,4 +1,8 @@
-import { ComponentPropsWithRef, useContext, useLayoutEffect } from "react";
+import React, {
+  ComponentPropsWithRef,
+  useContext,
+  useLayoutEffect,
+} from "react";
 import {
   getNextFocusableNode,
   getPreviousFocusableNode,
@@ -14,7 +18,9 @@ export function useTreeView(
   isRoot?: boolean
 ): {
   isOpen: boolean;
-  toggleOpen: () => void;
+  open: () => void;
+  close: () => void;
+  isFocused: boolean;
   getTreeProps: any;
 } {
   const { state, dispatch, elements } =
@@ -39,9 +45,13 @@ export function useTreeView(
 
   return {
     isOpen: isOpen.get(id) ?? false,
-    toggleOpen: function () {
-      dispatch({ type: "TOGGLE_OPEN", id });
+    open: function () {
+      dispatch({ type: "SET_OPEN", id });
     },
+    close: function () {
+      dispatch({ type: "SET_CLOSED", id });
+    },
+    isFocused: state.focusedId === id,
     getTreeProps: (): ComponentPropsWithRef<"li"> => ({
       ref: function (current: HTMLElement | null) {
         if (current) {
@@ -57,7 +67,7 @@ export function useTreeView(
           //   console.log("up");
           const prevId = getPreviousFocusableNode(state, id);
           //   console.log({ prevId });
-          dispatch({ type: "FOCUS", id: prevId });
+          dispatch({ type: "SET_FOCUSABLE", id: prevId });
           elements.current.get(prevId)?.focus();
         }
 
@@ -65,13 +75,26 @@ export function useTreeView(
           console.log("down", event);
           const nextId = getNextFocusableNode(state, id);
           console.log({ nextId });
-          dispatch({ type: "FOCUS", id: nextId });
+          dispatch({ type: "SET_FOCUSABLE", id: nextId });
           elements.current.get(nextId)?.focus();
         }
 
-        if (isHotkey("left", event) || isHotkey("right", event)) {
-          dispatch({ type: "TOGGLE_OPEN", id });
+        if (isHotkey("left", event)) {
+          dispatch({ type: "SET_CLOSED", id });
         }
+
+        if (isHotkey("right", event)) {
+          dispatch({ type: "SET_OPEN", id });
+        }
+      },
+      onFocus: function (event: React.FocusEvent) {
+        event.stopPropagation();
+        dispatch({ type: "ON_FOCUS", id });
+        console.log("focus", id);
+      },
+      onBlur: function (event: React.FocusEvent) {
+        event.stopPropagation();
+        dispatch({ type: "ON_BLUR", id });
       },
     }),
   };

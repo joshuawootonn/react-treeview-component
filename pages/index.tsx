@@ -11,7 +11,12 @@ const Home: NextPage = () => {
   return (
     <motion.div className="flex flex-col justify-start items-start p-12">
       <TreeViewProvider>
-        <ul role="tree" aria-label="File Manager" aria-multiselectable="false">
+        <ul
+          role="tree"
+          aria-label="File Manager"
+          aria-multiselectable="false"
+          className="w-[200px]"
+        >
           {state.children?.map((node) => {
             return <TreeNode key={node.id} isRoot={true} node={node} />;
           })}

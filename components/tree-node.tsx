@@ -1,7 +1,8 @@
+import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
 import { MyTreeNodeForNestedLad } from "lib/types";
 import { useTreeView } from "lib/useTree";
-import { Folder, File } from "./icons";
+import { Folder, File, Arrow } from "./icons";
 type TreeNodeProps = {
   node?: MyTreeNodeForNestedLad;
   isRoot: boolean;
@@ -9,7 +10,7 @@ type TreeNodeProps = {
 export function TreeNode({ node, isRoot }: TreeNodeProps) {
   if (node == null) return null;
 
-  const { isOpen, toggleOpen, getTreeProps } = useTreeView(
+  const { isOpen, close, open, isFocused, getTreeProps } = useTreeView(
     node.id,
     node.children?.map((a) => a.id) ?? [],
     isRoot
@@ -21,9 +22,9 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
       key={node.id + "div"}
       onClick={(e) => {
         e.stopPropagation();
-        toggleOpen();
+        isOpen ? close() : open();
       }}
-      className="cursor-pointer select-none flex flex-col"
+      className="relative cursor-pointer select-none flex flex-col focus:outline-none"
       aria-expanded={
         node.children?.length != null &&
         node.children.length > 0 &&
@@ -31,19 +32,73 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
       }
       {...getTreeProps()}
     >
-      <div className="flex flex-row items-center">
-        {node.children?.length ?? 0 > 0 ? (
-          <Folder isExpanded={node.isExpanded} className="h-4 w-4 mr-2 mb-1" />
-        ) : (
-          <File className="h-4 w-4 mr-2 mb-1" />
+      <div
+        className={classNames(
+          "flex flex-row items-center",
+          isFocused && "bg-slate-200"
         )}
-        {node.name}
+      >
+        {node.children?.length ?? 0 > 0 ? (
+          <Arrow className="h-4 w-4 mr-2" isExpanded={isOpen} />
+        ) : (
+          <div className="h-4 w-4 mr-2" />
+        )}
+        {node.children?.length ?? 0 > 0 ? (
+          <Folder isExpanded={isOpen} className="h-5 w-5 mr-2 " />
+        ) : (
+          <File className="h-5 w-5 mr-2" />
+        )}
+        <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden">
+          {node.name}
+        </span>
       </div>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.svg
+            viewBox="0 0 3 60"
+            fill="none"
+            preserveAspectRatio="none"
+            width={2}
+            xmlns="http://www.w3.org/2000/svg"
+            className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2 transform -translate-x-1/2 stroke-slate-200"
+            key={"line"}
+            initial={{ height: 0 }}
+            stroke="currentColor"
+            animate={{
+              height: "auto",
+              transition: {
+                duration: 0.25,
+                delay: 0.05,
+                ease: [0.165, 0.84, 0.44, 1],
+              },
+            }}
+            exit={{
+              height: 0,
+              transition: {
+                duration: 0.25,
+                ease: [0.165, 0.84, 0.44, 1],
+              },
+            }}
+          >
+            <motion.line
+              strokeLinecap="round"
+              x1="1"
+              x2="1"
+              y1="1"
+              y2="59"
+              strokeWidth={2}
+            />
+          </motion.svg>
+        )}
+      </AnimatePresence>
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.ul
             key={node.id + "ul"}
-            initial={{ height: 0, opacity: 0 }}
+            initial={{
+              height: 0,
+              opacity: 0,
+            }}
             animate={{
               height: "auto",
               opacity: 1,
@@ -69,7 +124,7 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
                 },
               },
             }}
-            className="[&>li]:pl-3"
+            className="[&>li]:ml-4"
           >
             {node.children?.map((childNode) => {
               return (
