@@ -21,11 +21,13 @@ export function useTreeView(
   open: () => void;
   close: () => void;
   isFocused: boolean;
+  isSelected: boolean;
   getTreeProps: any;
 } {
   const { state, dispatch, elements } =
     useContext<TreeViewContextType>(TreeViewContext);
   const { isOpen, focusableId } = state;
+  const isFolder = state.children.get(id)?.length;
 
   useLayoutEffect(() => {
     dispatch({
@@ -52,6 +54,7 @@ export function useTreeView(
       dispatch({ type: "SET_CLOSED", id });
     },
     isFocused: state.focusedId === id,
+    isSelected: state.selectedId === id,
     getTreeProps: (): ComponentPropsWithRef<"li"> => ({
       ref: function (current: HTMLElement | null) {
         if (current) {
@@ -61,6 +64,21 @@ export function useTreeView(
         }
       },
       tabIndex: focusableId === id ? 0 : -1,
+      onMouseDown: function (event: React.MouseEvent) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+        if (event.button === 0) {
+          event.stopPropagation();
+
+          if (isFolder) {
+            isOpen.get(id)
+              ? dispatch({ type: "SET_CLOSED", id })
+              : dispatch({ type: "SET_OPEN", id });
+          }
+
+          dispatch({ type: "SELECT", id });
+          console.log("select", id);
+        }
+      },
       onKeyDown: function (event: React.KeyboardEvent) {
         event.stopPropagation();
         if (isHotkey("up", event)) {
@@ -85,6 +103,16 @@ export function useTreeView(
 
         if (isHotkey("right", event)) {
           dispatch({ type: "SET_OPEN", id });
+        }
+
+        console.log({ isFolder, selectedId: state.selectedId, id });
+        if (!isFolder && isHotkey("space", event)) {
+          dispatch({ type: "SELECT", id });
+        }
+        if (isFolder && isHotkey("space", event)) {
+          isOpen.get(id)
+            ? dispatch({ type: "SET_CLOSED", id })
+            : dispatch({ type: "SET_OPEN", id });
         }
       },
       onFocus: function (event: React.FocusEvent) {

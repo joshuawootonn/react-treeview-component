@@ -9,7 +9,8 @@ const Home: NextPage = () => {
   const [state, setState] = useState(data);
 
   return (
-    <motion.div className="flex flex-col justify-start items-start p-12">
+    <motion.div className="flex flex-col justify-start items-start p-12 space-y-12">
+      <button> Button before </button>
       <TreeViewProvider>
         <ul
           role="tree"
@@ -22,8 +23,8 @@ const Home: NextPage = () => {
           })}
         </ul>
       </TreeViewProvider>
-      <p>content</p>
-      <button> nice</button>
+
+      <button> Button after </button>
     </motion.div>
   );
 };

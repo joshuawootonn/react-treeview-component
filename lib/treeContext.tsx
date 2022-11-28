@@ -22,6 +22,7 @@ function getInitialState(): ReducerState {
     parent: new MyMap<string, string>(),
     focusableId: null,
     focusedId: null,
+    selectedId: null,
   };
 }
 
@@ -39,10 +40,11 @@ export type TreeViewContextType = TreeType & {
 type ReducerState = {
   rootNodeIds: Set<string>;
   isOpen: MyMap<string, boolean>;
-  focusableId?: string | null;
-  focusedId?: string | null;
   children: MyMap<string, string[]>;
   parent: MyMap<string, string>;
+  focusableId?: string | null;
+  focusedId?: string | null;
+  selectedId?: string | null;
 };
 
 type Actions =
@@ -54,6 +56,8 @@ type Actions =
   | { type: "DEREGISTER_NODE"; id: string; childrenIds: string[] }
   | { type: "ON_FOCUS"; id: string }
   | { type: "ON_BLUR"; id: string }
+  | { type: "SELECT"; id: string }
+  | { type: "UNSELECT"; id: string }
   | { type: "SET_FOCUSABLE"; id: string }
   | {
       type: "REGISTER_ROOT_NODE";
@@ -69,6 +73,7 @@ type Actions =
       type: "SET_CLOSED";
       id: string;
     };
+
 export function getNextFocusableNode(
   state: ReducerState,
   originalId: string
@@ -266,6 +271,16 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         ...state,
         isOpen: new MyMap(state.isOpen).replace(action.id, false),
       };
+    case "SELECT":
+      return {
+        ...state,
+        selectedId: action.id,
+      };
+    case "UNSELECT":
+      return {
+        ...state,
+        selectedId: null,
+      };
     default:
       throw new Error();
   }
@@ -283,13 +298,13 @@ export function TreeViewProvider({ children }: TreeViewProviderProps) {
     <TreeViewContext.Provider value={{ dispatch, elements, state } as any}>
       {children}
 
-      <button
+      {/* <button
         onClick={() => {
           console.log({ dispatch, ...state });
         }}
       >
         print state
-      </button>
+      </button> */}
     </TreeViewContext.Provider>
   );
 }

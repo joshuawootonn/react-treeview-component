@@ -10,20 +10,13 @@ type TreeNodeProps = {
 export function TreeNode({ node, isRoot }: TreeNodeProps) {
   if (node == null) return null;
 
-  const { isOpen, close, open, isFocused, getTreeProps } = useTreeView(
-    node.id,
-    node.children?.map((a) => a.id) ?? [],
-    isRoot
-  );
+  const { isOpen, close, open, isFocused, isSelected, getTreeProps } =
+    useTreeView(node.id, node.children?.map((a) => a.id) ?? [], isRoot);
 
   return (
     <li
       role="treeitem"
       key={node.id + "div"}
-      onClick={(e) => {
-        e.stopPropagation();
-        isOpen ? close() : open();
-      }}
       className="relative cursor-pointer select-none flex flex-col focus:outline-none"
       aria-expanded={
         node.children?.length != null &&
@@ -34,8 +27,9 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
     >
       <div
         className={classNames(
-          "flex flex-row items-center",
-          isFocused && "bg-slate-200"
+          "flex flex-row items-center border-[1.5px] rounded-sm",
+          isFocused ? "border-slate-400" : "border-transparent",
+          isSelected ? "bg-slate-200" : "bg-transparent"
         )}
       >
         {node.children?.length ?? 0 > 0 ? (
