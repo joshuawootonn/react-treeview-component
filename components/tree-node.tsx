@@ -10,8 +10,11 @@ type TreeNodeProps = {
 export function TreeNode({ node, isRoot }: TreeNodeProps) {
   if (node == null) return null;
 
-  const { isOpen, close, open, isFocused, isSelected, getTreeProps } =
-    useTreeView(node.id, node.children?.map((a) => a.id) ?? [], isRoot);
+  const { isOpen, isFocused, isSelected, getTreeProps } = useTreeView(
+    node.id,
+    node.children?.map((a) => a.id) ?? [],
+    isRoot
+  );
 
   return (
     <li
@@ -27,20 +30,20 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
     >
       <div
         className={classNames(
-          "flex flex-row items-center border-[1.5px] rounded-sm",
+          "flex flex-row items-center border-[1.5px] rounded-sm space-x-2",
           isFocused ? "border-slate-400" : "border-transparent",
           isSelected ? "bg-slate-200" : "bg-transparent"
         )}
       >
         {node.children?.length ?? 0 > 0 ? (
-          <Arrow className="h-4 w-4 mr-2" isExpanded={isOpen} />
+          <Arrow className="h-4 w-4" isExpanded={isOpen} />
         ) : (
-          <div className="h-4 w-4 mr-2" />
+          <div className="h-4 w-4" />
         )}
         {node.children?.length ?? 0 > 0 ? (
-          <Folder isExpanded={isOpen} className="h-5 w-5 mr-2 " />
+          <Folder isExpanded={isOpen} className="h-5 w-5" />
         ) : (
-          <File className="h-5 w-5 mr-2" />
+          <File className="h-5 w-5" />
         )}
         <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden">
           {node.name}
@@ -54,18 +57,9 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
             preserveAspectRatio="none"
             width={2}
             xmlns="http://www.w3.org/2000/svg"
-            className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2 transform -translate-x-1/2 stroke-slate-200"
+            className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2.5 transform -translate-x-1/2 stroke-slate-200"
             key={"line"}
-            initial={{ height: 0 }}
             stroke="currentColor"
-            animate={{
-              height: "auto",
-              transition: {
-                duration: 0.25,
-                delay: 0.05,
-                ease: [0.165, 0.84, 0.44, 1],
-              },
-            }}
             exit={{
               height: 0,
               transition: {
