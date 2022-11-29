@@ -78,7 +78,7 @@ export function useTreeView(
               ? dispatch({ type: TreeActionTypes.CLOSE, id })
               : dispatch({ type: TreeActionTypes.OPEN, id });
           }
-
+          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
           dispatch({ type: TreeActionTypes.SELECT, id });
         }
       },
