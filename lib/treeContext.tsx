@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { MyMap } from "./MyMap";
+import { TreeNodeType } from "./types";
 
 export type TreeType = {
   getTreeProps: () => {};
@@ -14,13 +15,69 @@ export type TreeType = {
   dispatch: Dispatch<Actions>;
 };
 
-function getInitialState(): ReducerState {
+export type TreeNodeMetadataType = {
+  isFolder: boolean;
+  name: string;
+};
+
+function getInitialMetadata(node: TreeNodeType[]): any {
+  if ("children"! in node) {
+    return [] as any;
+  }
+
+  return node.reduce((acc, curr) => {
+    const children = curr.children ? getInitialMetadata(curr.children) : [];
+    return [
+      ...acc,
+      [
+        curr.id,
+        { name: curr.name, isFolder: (curr.children?.length ?? 0) > 0 },
+      ],
+      ...children,
+    ];
+  }, [] as any);
+}
+
+function getInitialChildren(node: TreeNodeType[]): any {
+  if ("children"! in node) {
+    return [] as any;
+  }
+
+  return node.reduce((acc, curr) => {
+    const children = curr.children ? getInitialChildren(curr.children) : [];
+    return [
+      ...acc,
+      [curr.id, curr.children?.map((child) => child.id)],
+      ...children,
+    ];
+  }, [] as any);
+}
+
+function getInitialParents(node: TreeNodeType[]): any {
+  if ("children"! in node) {
+    return [] as any;
+  }
+
+  return node.reduce((acc, curr) => {
+    const children = curr.children ? getInitialParents(curr.children) : [];
+    return [
+      ...acc,
+      ...(curr.children?.map((child) => [child.id, curr.id]) ?? []),
+      ...children,
+    ];
+  }, [] as any);
+}
+
+function getInitialState(rootNodes: TreeNodeType[]): ReducerState {
   return {
-    rootNodeIds: new Set<string>(),
+    rootNodeIds: new Set<string>(rootNodes.map((rootNode) => rootNode.id)),
     isOpen: new MyMap<string, boolean>(),
-    children: new MyMap<string, string[]>(),
-    parent: new MyMap<string, string>(),
-    focusableId: null,
+    metadata: new MyMap<string, TreeNodeMetadataType>(
+      getInitialMetadata(rootNodes)
+    ),
+    children: new MyMap<string, string[]>(getInitialChildren(rootNodes)),
+    parent: new MyMap<string, string>(getInitialParents(rootNodes)),
+    focusableId: rootNodes.at(0)?.id ?? null,
     focusedId: null,
     selectedId: null,
   };
@@ -28,7 +85,7 @@ function getInitialState(): ReducerState {
 
 export const TreeViewContext = React.createContext<TreeViewContextType>({
   getTreeProps: () => ({}),
-  state: getInitialState(),
+  state: getInitialState([]),
   dispatch: () => {},
   elements: { current: new MyMap<string, HTMLElement>() },
 });
@@ -40,8 +97,11 @@ export type TreeViewContextType = TreeType & {
 type ReducerState = {
   rootNodeIds: Set<string>;
   isOpen: MyMap<string, boolean>;
+  metadata: MyMap<string, TreeNodeMetadataType>;
+
   children: MyMap<string, string[]>;
   parent: MyMap<string, string>;
+
   focusableId?: string | null;
   focusedId?: string | null;
   selectedId?: string | null;
@@ -59,6 +119,7 @@ export enum TreeActionTypes {
   SET_FOCUSABLE = "SET_FOCUSABLE",
   OPEN = "OPEN",
   CLOSE = "CLOSE",
+  MOVE = "MOVE",
 }
 
 type Actions =
@@ -90,6 +151,11 @@ type Actions =
   | {
       type: TreeActionTypes.CLOSE;
       id: string;
+    }
+  | {
+      type: TreeActionTypes.MOVE;
+      id: string;
+      to: string;
     };
 
 export function getNextFocusableNode(
@@ -306,22 +372,59 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         selectedId: null,
       };
 
+    case TreeActionTypes.MOVE:
+      const currentParent = state.parent.get(action.id);
+      const newParent = action.to;
+      if (!currentParent || currentParent === newParent) return state;
+
+      // remove this child from current parent child array
+      nextChildren = new MyMap(state.children).set(
+        currentParent,
+        state.children
+          .get(currentParent)
+          ?.filter((children) => children !== action.id) ?? []
+      );
+
+      // add this child to new parent child array
+      nextChildren.replace(newParent, [
+        ...(state.children.get(newParent) ?? []),
+        action.id,
+      ]);
+      // change parent of this child
+
+      nextParent = new MyMap(state.parent);
+      nextParent.replace(action.id, newParent);
+
+      return { ...state, children: nextChildren, parent: nextParent };
+
     default:
       throw new Error("Reducer received an unknown action");
   }
 }
 
 type TreeViewProviderProps = {
-  // children: (tree: TreeType) => ReactNode | ReactNode[];
-  children: ReactNode;
+  children: ({
+    rootNodeIds,
+    dispatch,
+  }: {
+    rootNodeIds: string[];
+    dispatch: React.Dispatch<Actions>;
+  }) => ReactNode | ReactNode[];
+  // children: ReactNode;
+  initialTree: TreeNodeType[];
 };
 
-export function TreeViewProvider({ children }: TreeViewProviderProps) {
+export function TreeViewProvider({
+  children,
+  initialTree,
+}: TreeViewProviderProps) {
   const elements = useRef<MyMap<string, HTMLElement>>(new MyMap());
-  const [state, dispatch] = useReducer(reducer, getInitialState());
+  const [state, dispatch] = useReducer(reducer, getInitialState(initialTree));
+
   return (
     <TreeViewContext.Provider value={{ dispatch, elements, state } as any}>
-      {children}
+      {children({ rootNodeIds: Array.from(state.rootNodeIds), dispatch })}
+      {/* {children} */}
 
       {/* <button
         onClick={() => {

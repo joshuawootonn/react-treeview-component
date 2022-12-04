@@ -1,7 +1,7 @@
-export type MyTreeNodeForNestedLad = {
+export type TreeNodeType = {
   id: string;
   name: string;
-  children?: MyTreeNodeForNestedLad[];
+  children?: TreeNodeType[];
   isFolder?: boolean;
   isExpanded?: boolean;
 };

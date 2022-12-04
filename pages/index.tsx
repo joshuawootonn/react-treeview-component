@@ -1,27 +1,70 @@
 import { TreeNode } from "components/tree-node";
 import { motion } from "framer-motion";
 import { data } from "lib/initialValue";
-import { TreeViewProvider } from "lib/treeContext";
+import { TreeActionTypes, TreeViewProvider } from "lib/treeContext";
 import type { NextPage } from "next";
-import { useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor,
+} from "@dnd-kit/core";
 
 const Home: NextPage = () => {
-  const [state, setState] = useState(data);
+  const mouseSensor = useSensor(MouseSensor, {
+    // Require the mouse to move by 10 pixels before activating
+    activationConstraint: {
+      distance: 10,
+    },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    // Press delay of 250ms, with tolerance of 5px of movement
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  });
 
+  const sensors = useSensors(mouseSensor, touchSensor);
   return (
     <motion.div className="flex flex-col justify-start items-start p-12 space-y-12">
       <button> Button before </button>
-      <TreeViewProvider>
-        <ul
-          role="tree"
-          aria-label="File Manager"
-          aria-multiselectable="false"
-          className="w-[200px]"
-        >
-          {state.children?.map((node) => {
-            return <TreeNode key={node.id} isRoot={true} node={node} />;
-          })}
-        </ul>
+      <TreeViewProvider initialTree={data}>
+        {({ rootNodeIds, dispatch }) => {
+          function handleDragEnd(event: DragEndEvent) {
+            console.log("end dropping");
+            if (event.over && event.over.id != null) {
+              console.log(event);
+
+              dispatch({
+                type: TreeActionTypes.MOVE,
+                id: event.active.id.toString(),
+                to: event.over?.id.toString(),
+              });
+            }
+          }
+          return (
+            <DndContext
+              // required to make server and client attributes match
+              id={"treeview"}
+              sensors={sensors}
+              onDragEnd={handleDragEnd}
+            >
+              <ul
+                role="tree"
+                aria-label="File Manager"
+                aria-multiselectable="false"
+                className="w-[200px]"
+              >
+                {rootNodeIds?.map((id) => {
+                  return <TreeNode key={id} id={id} isRoot={true} />;
+                })}
+              </ul>
+            </DndContext>
+          );
+        }}
       </TreeViewProvider>
 
       <button> Button after </button>
