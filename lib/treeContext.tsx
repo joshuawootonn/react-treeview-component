@@ -1,34 +1,123 @@
-import MyApp from "pages/_app";
+import { TREE_AREA_ID } from "components/tree-area";
 import React, {
   Dispatch,
   MutableRefObject,
   ReactNode,
+  RefObject,
   useReducer,
   useRef,
 } from "react";
 import { MyMap } from "./MyMap";
-
+import { TreeNodeType } from "./types";
 export type TreeType = {
-  getTreeProps: () => {};
   state: ReducerState;
   dispatch: Dispatch<Actions>;
 };
 
-function getInitialState(): ReducerState {
+export type TreeNodeMetadataType = {
+  isFolder: boolean;
+  name: string;
+};
+
+function getInitialMetadata(
+  nodes: TreeNodeType[]
+): [string, TreeNodeMetadataType][] {
+  if ("children"! in nodes) return [];
+
+  return nodes.reduce<[string, TreeNodeMetadataType][]>((acc, curr) => {
+    const children = curr.children ? getInitialMetadata(curr.children) : [];
+    return [
+      ...acc,
+      [
+        curr.id,
+        { name: curr.name, isFolder: (curr.children?.length ?? 0) > 0 },
+      ],
+      ...children,
+    ];
+  }, []);
+}
+
+function getInitialChildren(rootNodes: TreeNodeType[]): [string, string[]][] {
+  if ("children"! in rootNodes) return [];
+
+  function traverse(
+    nodes: TreeNodeType[],
+    initialValues?: [string, string[]][]
+  ): [string, string[]][] {
+    if ("children"! in nodes) return [];
+
+    return nodes.reduce(
+      (acc, curr) => {
+        const children = curr.children ? traverse(curr.children) : [];
+        return [
+          ...acc,
+          [curr.id, curr.children?.map((child): string => child.id) ?? []],
+          ...children,
+        ];
+      },
+      initialValues ? initialValues : []
+    );
+  }
+
+  return traverse(
+    rootNodes,
+    rootNodes.map((n): [string, string[]] => [
+      TREE_AREA_ID,
+      rootNodes.map((node) => node.id),
+    ])
+  );
+}
+
+function getInitialParents(rootNodes: TreeNodeType[]): [string, string][] {
+  if ("children"! in rootNodes) return [];
+
+  function traverse(
+    nodes: TreeNodeType[],
+    initialValues?: [string, string][]
+  ): [string, string][] {
+    if ("children"! in nodes) return [];
+
+    return nodes.reduce<[string, string][]>(
+      (acc, curr) => {
+        const children = curr.children ? traverse(curr.children) : [];
+        return [
+          ...acc,
+          ...(curr.children?.map((child): [string, string] => [
+            child.id,
+            curr.id,
+          ]) ?? []),
+          ...children,
+        ];
+      },
+      initialValues ? initialValues : []
+    );
+  }
+
+  return traverse(
+    rootNodes,
+    rootNodes.map((node) => [node.id, TREE_AREA_ID])
+  );
+}
+
+function getInitialState(rootNodes: TreeNodeType[]): ReducerState {
+  const children = new MyMap<string, string[]>(getInitialChildren(rootNodes));
+  const parent = new MyMap<string, string>(getInitialParents(rootNodes));
+
   return {
-    rootNodeIds: new Set<string>(),
     isOpen: new MyMap<string, boolean>(),
-    children: new MyMap<string, string[]>(),
-    parent: new MyMap<string, string>(),
-    focusableId: null,
+    metadata: new MyMap<string, TreeNodeMetadataType>(
+      getInitialMetadata(rootNodes)
+    ),
+    children,
+    parent,
+    focusableId: rootNodes.at(0)?.id,
     focusedId: null,
     selectedId: null,
   };
 }
 
 export const TreeViewContext = React.createContext<TreeViewContextType>({
-  getTreeProps: () => ({}),
-  state: getInitialState(),
+  state: getInitialState([]),
   dispatch: () => {},
   elements: { current: new MyMap<string, HTMLElement>() },
 });
@@ -38,18 +127,19 @@ export type TreeViewContextType = TreeType & {
 };
 
 type ReducerState = {
-  rootNodeIds: Set<string>;
-  isOpen: MyMap<string, boolean>;
   children: MyMap<string, string[]>;
   parent: MyMap<string, string>;
+
+  isOpen: MyMap<string, boolean>;
+  metadata: MyMap<string, TreeNodeMetadataType>;
+
   focusableId?: string | null;
   focusedId?: string | null;
   selectedId?: string | null;
+  copiedId?: string | null;
 };
 
 export enum TreeActionTypes {
-  REGISTER_ROOT_NODE = "REGISTER_ROOT_NODE",
-  DEREGISTER_ROOT_NODE = "DEREGISTER_ROOT_NODE",
   REGISTER_NODE = "REGISTER_NODE",
   DEREGISTER_NODE = "DEREGISTER_NODE",
   FOCUS = "FOCUS",
@@ -59,19 +149,12 @@ export enum TreeActionTypes {
   SET_FOCUSABLE = "SET_FOCUSABLE",
   OPEN = "OPEN",
   CLOSE = "CLOSE",
+  MOVE = "MOVE",
+  COPY = "COPY",
+  PASTE = "PASTE",
 }
 
 type Actions =
-  | {
-      type: TreeActionTypes.REGISTER_ROOT_NODE;
-      id: string;
-      childrenIds: string[];
-    }
-  | {
-      type: TreeActionTypes.DEREGISTER_ROOT_NODE;
-      id: string;
-      childrenIds: string[];
-    }
   | {
       type: TreeActionTypes.REGISTER_NODE;
       id: string;
@@ -90,30 +173,53 @@ type Actions =
   | {
       type: TreeActionTypes.CLOSE;
       id: string;
+    }
+  | {
+      type: TreeActionTypes.MOVE;
+      id: string;
+      to: string;
+    }
+  | {
+      type: TreeActionTypes.COPY;
+      id: string;
+    }
+  | {
+      type: TreeActionTypes.PASTE;
+      to: string;
     };
 
 export function getNextFocusableNode(
   state: ReducerState,
   originalId: string
 ): string {
+  return traverse(originalId);
+
   function traverse(id: string, prevId?: string): string {
+    if (id === TREE_AREA_ID) {
+      let arr = state.children.get(TREE_AREA_ID);
+      if (!arr) return id;
+
+      if (prevId) {
+        let indexOfPrevId = arr.findIndex((ele: any) => prevId === ele);
+        let nextNodeId = arr[indexOfPrevId + 1];
+        if (nextNodeId == null) return originalId;
+        return nextNodeId;
+      } else {
+        return arr[0] ?? originalId;
+      }
+    }
+
     const isCurrentOpen = state.isOpen.get(id);
     const currentChildren = state.children.get(id);
-
-    console.log(id, { isCurrentOpen, currentChildren });
-
     if (
       isCurrentOpen &&
       currentChildren &&
       (currentChildren?.length ?? 0) > 0
     ) {
-      console.log({ originalId, id, prevId });
-      //enter child @ 0
       if (originalId == id) {
         return currentChildren?.at(0) ?? id;
       }
 
-      //enter child after current
       const currentLocation = currentChildren.findIndex(
         (childId) => childId === prevId
       );
@@ -123,20 +229,8 @@ export function getNextFocusableNode(
       }
     }
 
-    const isRoot = state.rootNodeIds.has(id);
-    // console.log(id, { parentId: id, isRoot });
-    if (isRoot) {
-      let arr = Array.from(state.rootNodeIds);
-      let index = arr.findIndex((ele: any) => id === ele);
-      let nextRootNodeId = arr[index + 1];
-      // console.log({ nextRootNodeId });
-
-      if (nextRootNodeId == null) return originalId;
-
-      return nextRootNodeId;
-    }
-
     const parent = state.parent.get(id);
+    // console.log({ parent, id });
 
     if (parent) {
       return traverse(parent, id);
@@ -144,21 +238,21 @@ export function getNextFocusableNode(
 
     return id;
   }
-
-  return traverse(originalId);
 }
 
 export function getPreviousFocusableNode(
   state: ReducerState,
   originalId: string
 ): string {
+  if (originalId === TREE_AREA_ID) {
+    return TREE_AREA_ID;
+  }
   const parent = state.parent.get(originalId);
   if (parent) {
     const siblingNodes = state.children.get(parent);
 
-    if (!siblingNodes) {
+    if (siblingNodes == null || siblingNodes.length === 0) {
       throw new Error("shouldn't be here");
-      return originalId;
     }
     if (siblingNodes?.at(0) === originalId) {
       return parent;
@@ -175,22 +269,14 @@ export function getPreviousFocusableNode(
       }
     }
   }
-  let arr = Array.from(state.rootNodeIds);
-  let index = arr.findIndex((ele: any) => originalId === ele);
-  let prevRootNodeId = arr[index - 1];
 
-  if (prevRootNodeId == null) return originalId;
-
-  if (state.isOpen.get(prevRootNodeId) == true) {
-    return traverse(prevRootNodeId);
-  }
-  return prevRootNodeId;
+  throw new Error("Woops! Only the root should not have a parent");
 
   function traverse(id: string): string {
-    console.log(id);
+    // console.log(id);
 
     const children = state.children.get(id);
-    console.log({ children, isOpen: state.isOpen.get(id) == false });
+    // console.log({ children, isOpen: state.isOpen.get(id) == false });
 
     if (
       children == null ||
@@ -205,60 +291,19 @@ export function getPreviousFocusableNode(
 }
 
 function reducer(state: ReducerState, action: Actions): ReducerState {
-  let nextRootNodeIds: Set<string>;
-  let nextFocusableId: string | undefined | null,
-    nextChildren: MyMap<string, string[]>,
-    nextParent: MyMap<string, string>;
-
   switch (action.type) {
-    case TreeActionTypes.REGISTER_ROOT_NODE:
-      nextRootNodeIds = new Set(state.rootNodeIds);
-      nextRootNodeIds.add(action.id);
-
-      const isFirstNode = state.rootNodeIds.size === 0;
-      nextFocusableId = isFirstNode ? action.id : state.focusableId;
-
-      nextChildren = new MyMap(state.children).set(
-        action.id,
-        action.childrenIds
-      );
-      nextParent = new MyMap(state.parent);
-      action.childrenIds.forEach((childId) => {
-        nextParent.set(childId, action.id);
-      });
-
-      return {
-        ...state,
-        rootNodeIds: nextRootNodeIds,
-        focusableId: nextFocusableId,
-        children: nextChildren,
-        parent: nextParent,
-      };
-
-    case TreeActionTypes.DEREGISTER_ROOT_NODE:
-      nextRootNodeIds = new Set(state.rootNodeIds);
-      nextRootNodeIds.delete(action.id);
-
-      return {
-        ...state,
-        rootNodeIds: nextRootNodeIds,
-      };
-
     case TreeActionTypes.REGISTER_NODE:
-      nextChildren = new MyMap(state.children).set(
-        action.id,
-        action.childrenIds
-      );
-
-      nextParent = new MyMap(state.parent);
+      const nextParentMap: MyMap<string, string> = new MyMap(state.parent);
       action.childrenIds.forEach((childId) => {
-        nextParent.set(childId, action.id);
+        nextParentMap.set(childId, action.id);
       });
-
       return {
         ...state,
-        children: nextChildren,
-        parent: nextParent,
+        children: new MyMap(state.children).set(action.id, action.childrenIds),
+        parent: nextParentMap,
+
+        focusableId:
+          state.children.size() === 0 ? action.id : state.focusableId,
       };
 
     case TreeActionTypes.DEREGISTER_NODE:
@@ -285,13 +330,13 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
     case TreeActionTypes.OPEN:
       return {
         ...state,
-        isOpen: new MyMap(state.isOpen).replace(action.id, true),
+        isOpen: new MyMap(state.isOpen).set(action.id, true),
       };
 
     case TreeActionTypes.CLOSE:
       return {
         ...state,
-        isOpen: new MyMap(state.isOpen).replace(action.id, false),
+        isOpen: new MyMap(state.isOpen).set(action.id, false),
       };
 
     case TreeActionTypes.SELECT:
@@ -306,30 +351,88 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
         selectedId: null,
       };
 
+    case TreeActionTypes.MOVE:
+      const prevParent = state.parent.get(action.id);
+      const nextParent = action.to;
+
+      if (prevParent === nextParent || nextParent === action.id) return state;
+
+      if (prevParent == null) {
+        throw new Error("You can only move nodes with a parent");
+      }
+
+      return {
+        ...state,
+        children: new MyMap(state.children)
+          .set(
+            prevParent,
+            state.children
+              .get(prevParent)
+              ?.filter((children) => children !== action.id) ?? []
+          )
+          .set(nextParent, [
+            ...(state.children.get(nextParent) ?? []),
+            action.id,
+          ]),
+        parent: new MyMap(state.parent).set(action.id, nextParent),
+      };
+
+    case TreeActionTypes.COPY:
+      return { ...state, copiedId: action.id };
+
+    case TreeActionTypes.PASTE:
+      if (state.copiedId == null || action.to === state.copiedId) return state;
+
+      const isFolder = (state.children.get(action.to)?.length ?? 0) > 0;
+      const parent = state.parent.get(action.to);
+
+      if (!isFolder && parent) {
+        return reducer(state, {
+          to: parent,
+          type: TreeActionTypes.PASTE,
+        });
+      }
+
+      return reducer(
+        { ...state, copiedId: null },
+        {
+          type: TreeActionTypes.MOVE,
+          id: state.copiedId,
+          to: action.to,
+        }
+      );
+
     default:
       throw new Error("Reducer received an unknown action");
   }
 }
 
 type TreeViewProviderProps = {
-  // children: (tree: TreeType) => ReactNode | ReactNode[];
-  children: ReactNode;
+  children: ({
+    rootNodeIds,
+    dispatch,
+  }: {
+    rootNodeIds: string[];
+    dispatch: React.Dispatch<Actions>;
+    elements: RefObject<MyMap<string, HTMLElement>>;
+  }) => ReactNode | ReactNode[];
+  initialTree: TreeNodeType[];
 };
 
-export function TreeViewProvider({ children }: TreeViewProviderProps) {
+export function TreeViewProvider({
+  children,
+  initialTree,
+}: TreeViewProviderProps) {
   const elements = useRef<MyMap<string, HTMLElement>>(new MyMap());
-  const [state, dispatch] = useReducer(reducer, getInitialState());
-  return (
-    <TreeViewContext.Provider value={{ dispatch, elements, state } as any}>
-      {children}
+  const [state, dispatch] = useReducer(reducer, getInitialState(initialTree));
 
-      {/* <button
-        onClick={() => {
-          console.log({ dispatch, ...state });
-        }}
-      >
-        print state
-      </button> */}
+  return (
+    <TreeViewContext.Provider value={{ dispatch, elements, state }}>
+      {children({
+        rootNodeIds: state.children.get(TREE_AREA_ID) ?? [],
+        dispatch,
+        elements,
+      })}
     </TreeViewContext.Provider>
   );
 }

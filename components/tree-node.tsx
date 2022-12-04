@@ -1,53 +1,177 @@
 import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
-import { MyTreeNodeForNestedLad } from "lib/types";
-import { useTreeView } from "lib/useTree";
-import { Folder, File, Arrow } from "./icons";
+import { useTreeNode } from "lib/useTreeNode";
+import { Folder, File, Arrow, Ellipse } from "./icons";
+import { useDroppable, useDraggable } from "@dnd-kit/core";
+import { Menu, Transition } from "@headlessui/react";
+import { MouseEvent, KeyboardEvent, Fragment } from "react";
+
 type TreeNodeProps = {
-  node?: MyTreeNodeForNestedLad;
+  id: string;
   isRoot: boolean;
 };
-export function TreeNode({ node, isRoot }: TreeNodeProps) {
-  if (node == null) return null;
 
-  const { isOpen, isFocused, isSelected, getTreeProps } = useTreeView(
-    node.id,
-    node.children?.map((a) => a.id) ?? [],
-    isRoot
-  );
+export function TreeNode({ id }: TreeNodeProps) {
+  const {
+    isOpen,
+    isFocused,
+    isSelected,
+    getTreeNodeProps,
+    children,
+    metadata,
+    copy,
+    paste,
+  } = useTreeNode(id);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableNodeRef,
+  } = useDraggable({
+    id: id,
+  });
+
+  const { isOver, setNodeRef: setDroppabledNodeRef } = useDroppable({
+    id,
+    disabled: !metadata.isFolder,
+  });
+
+  const { ref, tabIndex, ...treeNodeProps } = getTreeNodeProps();
 
   return (
     <li
+      key={id + "div"}
+      className={classNames(
+        "relative cursor-pointer select-none flex flex-col focus:outline-none",
+        isOver && "bg-slate-400/10"
+      )}
+      aria-expanded={metadata.isFolder && isOpen}
+      ref={(element: HTMLElement | null) => {
+        setDraggableNodeRef(element);
+        setDroppabledNodeRef(element);
+        ref(element);
+        if (isFocused && element) {
+          element.focus();
+        }
+      }}
+      {...listeners}
+      {...attributes}
+      {...treeNodeProps}
+      tabIndex={tabIndex}
       role="treeitem"
-      key={node.id + "div"}
-      className="relative cursor-pointer select-none flex flex-col focus:outline-none"
-      aria-expanded={
-        node.children?.length != null &&
-        node.children.length > 0 &&
-        node.isExpanded
-      }
-      {...getTreeProps()}
     >
       <div
         className={classNames(
           "flex flex-row items-center border-[1.5px] rounded-sm space-x-2",
-          isFocused ? "border-slate-400" : "border-transparent",
-          isSelected ? "bg-slate-200" : "bg-transparent"
+          isFocused
+            ? "border-slate-400 focus-within:border-transparent"
+            : "border-transparent",
+          isSelected ? "bg-slate-300" : "bg-transparent"
         )}
       >
-        {node.children?.length ?? 0 > 0 ? (
+        {metadata.isFolder ? (
           <Arrow className="h-4 w-4" isExpanded={isOpen} />
         ) : (
           <div className="h-4 w-4" />
         )}
-        {node.children?.length ?? 0 > 0 ? (
+        {metadata.isFolder ? (
           <Folder isExpanded={isOpen} className="h-5 w-5" />
         ) : (
           <File className="h-5 w-5" />
         )}
-        <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden">
-          {node.name}
+        <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden flex-grow">
+          {metadata.name}
         </span>
+
+        <Menu
+          as="div"
+          className={classNames(
+            "flex items-center relative text-left opacity-0 ",
+            isFocused && "opacity-100"
+          )}
+          onClick={function (event: MouseEvent) {
+            event.stopPropagation();
+          }}
+          onKeyDown={function (event: KeyboardEvent) {
+            event.stopPropagation();
+          }}
+        >
+          <Menu.Button
+            onClick={function (event: MouseEvent) {
+              event.stopPropagation();
+              console.log("cliked menu");
+            }}
+            onKeyDown={function (event: KeyboardEvent) {
+              event.stopPropagation();
+              console.log("copy - keydown");
+            }}
+            tabIndex={tabIndex}
+            className="m-1 border-[1.5px] transform rounded-sm border-transparent focus-visible:border-slate-400 focus-visible:outline-none "
+          >
+            <Ellipse className="h-5 w-5" />
+          </Menu.Button>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <Menu.Items className="absolute w-32 left-full top-0 z-10  origin-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={classNames(
+                      active ? "bg-slate-100 text-slate-900" : "text-slate-700",
+                      "flex items-center w-full px-4 h-8 text-sm"
+                    )}
+                    onClick={function (event: MouseEvent) {
+                      event.stopPropagation();
+                      copy();
+                    }}
+                    onKeyDown={function (event: KeyboardEvent) {
+                      event.stopPropagation();
+                      console.log("copy - keydown");
+                    }}
+                  >
+                    <span className="font-mono font-medium flex-grow text-left">
+                      Copy
+                    </span>
+                    <span className="text-slate-400 text-xs">
+                      ⌘<span className="text-lg leading-none">+</span>C
+                    </span>
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={classNames(
+                      active ? "bg-slate-100 text-slate-900" : "text-slate-700",
+                      "flex items-center w-full px-4 h-8 text-sm"
+                    )}
+                    onClick={function (event: MouseEvent) {
+                      event.stopPropagation();
+                      paste();
+                    }}
+                    onKeyDown={function (event: KeyboardEvent) {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <span className="font-mono font-medium flex-grow text-left">
+                      Paste
+                    </span>
+                    <span className="text-slate-400 text-xs">
+                      ⌘<span className="text-lg leading-none">+</span>P
+                    </span>
+                  </button>
+                )}
+              </Menu.Item>
+            </Menu.Items>
+          </Transition>
+        </Menu>
       </div>
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -58,7 +182,7 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
             width={2}
             xmlns="http://www.w3.org/2000/svg"
             className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2.5 transform -translate-x-1/2 stroke-slate-200"
-            key={"line"}
+            key={id + "line"}
             stroke="currentColor"
             exit={{
               height: 0,
@@ -82,7 +206,7 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.ul
-            key={node.id + "ul"}
+            key={id + "ul"}
             initial={{
               height: 0,
               opacity: 0,
@@ -114,9 +238,13 @@ export function TreeNode({ node, isRoot }: TreeNodeProps) {
             }}
             className="[&>li]:ml-4"
           >
-            {node.children?.map((childNode) => {
+            {children?.map((childNodeId) => {
               return (
-                <TreeNode key={childNode.id} node={childNode} isRoot={false} />
+                <TreeNode
+                  key={id + childNodeId}
+                  id={childNodeId}
+                  isRoot={false}
+                />
               );
             })}
           </motion.ul>

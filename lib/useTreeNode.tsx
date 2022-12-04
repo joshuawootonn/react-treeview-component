@@ -1,53 +1,41 @@
-import React, {
-  ComponentPropsWithRef,
-  useContext,
-  useLayoutEffect,
-} from "react";
+import { useContext, FocusEvent, MouseEvent, KeyboardEvent } from "react";
 import {
   TreeActionTypes,
   getNextFocusableNode,
   getPreviousFocusableNode,
   TreeViewContext,
   TreeViewContextType,
+  TreeNodeMetadataType,
 } from "./treeContext";
 import isHotkey from "is-hotkey";
 
-export function useTreeView(
-  id: string,
-  childrenIds: string[],
-  isRoot?: boolean
-): {
+export function useTreeNode(id: string): {
   isOpen: boolean;
   open: () => void;
   close: () => void;
   isFocused: boolean;
   isSelected: boolean;
-  getTreeProps: any;
+  children: string[];
+  metadata: TreeNodeMetadataType;
+  copy: () => void;
+  paste: () => void;
+  getTreeNodeProps: () => {
+    ref: (current: HTMLElement | null) => void;
+    tabIndex: number;
+    onClick: (event: MouseEvent) => void;
+    onKeyDown: (event: KeyboardEvent) => void;
+    onBlur: (event: FocusEvent) => void;
+    onFocus: (event: FocusEvent) => void;
+  };
 } {
   const { state, dispatch, elements } =
     useContext<TreeViewContextType>(TreeViewContext);
   const { isOpen, focusableId } = state;
   const isFolder = state.children.get(id)?.length;
-
-  useLayoutEffect(() => {
-    dispatch({
-      type: isRoot
-        ? TreeActionTypes.REGISTER_ROOT_NODE
-        : TreeActionTypes.REGISTER_NODE,
-      id,
-      childrenIds,
-    });
-
-    return () => {
-      dispatch({
-        type: isRoot
-          ? TreeActionTypes.DEREGISTER_ROOT_NODE
-          : TreeActionTypes.DEREGISTER_NODE,
-        id,
-        childrenIds,
-      });
-    };
-  }, [isRoot]);
+  const metadata = state.metadata.get(id) ?? {
+    name: "Untitled",
+    isFolder: false,
+  };
 
   return {
     isOpen: isOpen.get(id) ?? false,
@@ -59,7 +47,16 @@ export function useTreeView(
     },
     isFocused: state.focusedId === id,
     isSelected: state.selectedId === id,
-    getTreeProps: (): ComponentPropsWithRef<"li"> => ({
+    children: state.children.get(id) ?? [],
+    copy: function () {
+      dispatch({ type: TreeActionTypes.COPY, id });
+    },
+    paste: function () {
+      dispatch({ type: TreeActionTypes.PASTE, to: id });
+      elements.current.get(state.selectedId ?? "")?.focus();
+    },
+    metadata,
+    getTreeNodeProps: () => ({
       ref: function (current: HTMLElement | null) {
         if (current) {
           elements.current.set(id, current);
@@ -68,12 +65,12 @@ export function useTreeView(
         }
       },
       tabIndex: focusableId === id ? 0 : -1,
-      onMouseDown: function (event: React.MouseEvent) {
+      onClick: function (event: MouseEvent) {
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
         if (event.button === 0) {
           event.stopPropagation();
 
-          if (isFolder) {
+          if (metadata.isFolder) {
             isOpen.get(id)
               ? dispatch({ type: TreeActionTypes.CLOSE, id })
               : dispatch({ type: TreeActionTypes.OPEN, id });
@@ -82,7 +79,7 @@ export function useTreeView(
           dispatch({ type: TreeActionTypes.SELECT, id });
         }
       },
-      onKeyDown: function (event: React.KeyboardEvent) {
+      onKeyDown: function (event: KeyboardEvent) {
         event.stopPropagation();
         if (isHotkey("up", event)) {
           const prevId = getPreviousFocusableNode(state, id);
@@ -104,37 +101,46 @@ export function useTreeView(
           dispatch({ type: TreeActionTypes.OPEN, id });
         }
 
-        if (!isFolder && isHotkey("space", event)) {
+        if (isHotkey("space", event)) {
           dispatch({ type: TreeActionTypes.SELECT, id });
         }
 
+        console.log({
+          isFolder: !!isFolder,
+          isSpace: isHotkey("space", event),
+          isOpen: isOpen.get(id),
+        });
         if (isFolder && isHotkey("space", event)) {
           isOpen.get(id)
-            ? dispatch({ type: TreeActionTypes.OPEN, id })
-            : dispatch({ type: TreeActionTypes.CLOSE, id });
+            ? dispatch({ type: TreeActionTypes.CLOSE, id })
+            : dispatch({ type: TreeActionTypes.OPEN, id });
+        }
+
+        if (isHotkey("cmd+c", event)) {
+          dispatch({ type: TreeActionTypes.COPY, id });
+        }
+
+        if (isHotkey("cmd+v", event) && state.copiedId != null) {
+          dispatch({ type: TreeActionTypes.PASTE, to: id });
+          dispatch({ type: TreeActionTypes.SELECT, id: state.copiedId });
+          dispatch({
+            type: TreeActionTypes.SET_FOCUSABLE,
+            id: state.copiedId,
+          });
+          dispatch({ type: TreeActionTypes.FOCUS, id: state.copiedId });
+
         }
       },
-      onFocus: function (event: React.FocusEvent) {
+      onFocus: function (event: FocusEvent) {
         event.stopPropagation();
         dispatch({ type: TreeActionTypes.FOCUS, id });
+        console.log({ type: TreeActionTypes.FOCUS, id });
       },
-      onBlur: function (event: React.FocusEvent) {
+      onBlur: function (event: FocusEvent) {
         event.stopPropagation();
         dispatch({ type: TreeActionTypes.BLUR, id });
+        console.log({ type: TreeActionTypes.BLUR, id });
       },
     }),
   };
 }
-
-// if(children && isExpanded) firstChild
-
-// if(!isExpanded || !children) {
-//     if(isRoot) {
-//         nextRoot
-//     }
-//     else {
-//         getParent
-
-//     goto next child
-//     }
-// }
