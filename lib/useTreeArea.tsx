@@ -1,10 +1,4 @@
-import {
-  useContext,
-  useLayoutEffect,
-  FocusEvent,
-  MouseEvent,
-  KeyboardEvent,
-} from "react";
+import { useContext, FocusEvent, MouseEvent, KeyboardEvent } from "react";
 import {
   TreeActionTypes,
   getNextFocusableNode,
@@ -15,15 +9,9 @@ import {
 } from "./treeContext";
 import isHotkey from "is-hotkey";
 
-export function useTreeView(id: string): {
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
+export function useTreeArea(id: string): {
   isFocused: boolean;
-  isSelected: boolean;
-  children: string[];
-  metadata: TreeNodeMetadataType;
-  getTreeProps: (value: { disabled: boolean }) => {
+  getTreeAreaProps: () => {
     ref: (current: HTMLElement | null) => void;
     tabIndex: number;
     onClick: (event: MouseEvent) => void;
@@ -34,26 +22,11 @@ export function useTreeView(id: string): {
 } {
   const { state, dispatch, elements } =
     useContext<TreeViewContextType>(TreeViewContext);
-  const { isOpen, focusableId } = state;
-  const isFolder = state.children.get(id)?.length;
-  const metadata = state.metadata.get(id) ?? {
-    name: "Untitled",
-    isFolder: false,
-  };
+  const { focusableId } = state;
 
   return {
-    isOpen: isOpen.get(id) ?? false,
-    open: function () {
-      dispatch({ type: TreeActionTypes.OPEN, id });
-    },
-    close: function () {
-      dispatch({ type: TreeActionTypes.CLOSE, id });
-    },
     isFocused: state.focusedId === id,
-    isSelected: state.selectedId === id,
-    children: state.children.get(id) ?? [],
-    metadata,
-    getTreeProps: () => ({
+    getTreeAreaProps: () => ({
       ref: function (current: HTMLElement | null) {
         if (current) {
           elements.current.set(id, current);
@@ -67,13 +40,7 @@ export function useTreeView(id: string): {
         if (event.button === 0) {
           event.stopPropagation();
 
-          if (metadata.isFolder) {
-            isOpen.get(id)
-              ? dispatch({ type: TreeActionTypes.CLOSE, id })
-              : dispatch({ type: TreeActionTypes.OPEN, id });
-          }
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
-          dispatch({ type: TreeActionTypes.SELECT, id });
         }
       },
       onKeyDown: function (event: KeyboardEvent) {
@@ -88,24 +55,6 @@ export function useTreeView(id: string): {
           const nextId = getNextFocusableNode(state, id);
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
           elements.current.get(nextId)?.focus();
-        }
-
-        if (isHotkey("left", event)) {
-          dispatch({ type: TreeActionTypes.CLOSE, id });
-        }
-
-        if (isHotkey("right", event)) {
-          dispatch({ type: TreeActionTypes.OPEN, id });
-        }
-
-        if (!isFolder && isHotkey("space", event)) {
-          dispatch({ type: TreeActionTypes.SELECT, id });
-        }
-
-        if (isFolder && isHotkey("space", event)) {
-          isOpen.get(id)
-            ? dispatch({ type: TreeActionTypes.OPEN, id })
-            : dispatch({ type: TreeActionTypes.CLOSE, id });
         }
       },
       onFocus: function (event: FocusEvent) {

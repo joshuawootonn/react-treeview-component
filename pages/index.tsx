@@ -11,6 +11,7 @@ import {
   MouseSensor,
   TouchSensor,
 } from "@dnd-kit/core";
+import { TreeArea } from "components/tree-area";
 
 const Home: NextPage = () => {
   const mouseSensor = useSensor(MouseSensor, {
@@ -52,16 +53,11 @@ const Home: NextPage = () => {
               sensors={sensors}
               onDragEnd={handleDragEnd}
             >
-              <ul
-                role="tree"
-                aria-label="File Manager"
-                aria-multiselectable="false"
-                className="w-[200px]"
-              >
+              <TreeArea>
                 {rootNodeIds?.map((id) => {
                   return <TreeNode key={id} id={id} isRoot={true} />;
                 })}
-              </ul>
+              </TreeArea>
             </DndContext>
           );
         }}

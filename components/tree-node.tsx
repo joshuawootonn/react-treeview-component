@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTreeView } from "lib/useTree";
+import { useTreeNode } from "lib/useTreeNode";
 import { Folder, File, Arrow } from "./icons";
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 
@@ -10,8 +10,14 @@ type TreeNodeProps = {
 };
 
 export function TreeNode({ id, isRoot }: TreeNodeProps) {
-  const { isOpen, isFocused, isSelected, getTreeProps, children, metadata } =
-    useTreeView(id);
+  const {
+    isOpen,
+    isFocused,
+    isSelected,
+    getTreeNodeProps,
+    children,
+    metadata,
+  } = useTreeNode(id);
 
   const {
     attributes,
@@ -26,7 +32,7 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
     disabled: !metadata.isFolder,
   });
 
-  const { ref, ...treeItemProps } = getTreeProps({ disabled: isOver });
+  const { ref, ...treeNodeProps } = getTreeNodeProps();
 
   return (
     <li
@@ -43,7 +49,7 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
       }}
       {...listeners}
       {...attributes}
-      {...treeItemProps}
+      {...treeNodeProps}
       role="treeitem"
     >
       <div

@@ -1,3 +1,4 @@
+import { TREE_AREA_ID } from "components/tree-area";
 import MyApp from "pages/_app";
 import React, {
   Dispatch,
@@ -375,27 +376,78 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
     case TreeActionTypes.MOVE:
       const currentParent = state.parent.get(action.id);
       const newParent = action.to;
-      if (!currentParent || currentParent === newParent) return state;
 
-      // remove this child from current parent child array
-      nextChildren = new MyMap(state.children).set(
-        currentParent,
-        state.children
-          .get(currentParent)
-          ?.filter((children) => children !== action.id) ?? []
-      );
+      if (currentParent === newParent || newParent === action.id) return state;
 
-      // add this child to new parent child array
-      nextChildren.replace(newParent, [
-        ...(state.children.get(newParent) ?? []),
-        action.id,
-      ]);
-      // change parent of this child
+      //root node
+      if (currentParent == null) {
+        //remove node from root nodes
+        nextRootNodeIds = new Set(state.rootNodeIds);
+        nextRootNodeIds.delete(action.id);
 
-      nextParent = new MyMap(state.parent);
-      nextParent.replace(action.id, newParent);
+        // add child to new parent
+        nextChildren = new MyMap(state.children);
+        nextChildren.replace(newParent, [
+          ...(state.children.get(newParent) ?? []),
+          action.id,
+        ]);
+        // add parent to node
+        // change parent of this child
+        nextParent = new MyMap(state.parent);
+        nextParent.set(action.id, newParent);
 
-      return { ...state, children: nextChildren, parent: nextParent };
+        return {
+          ...state,
+          children: nextChildren,
+          parent: nextParent,
+          rootNodeIds: nextRootNodeIds,
+        };
+      } else {
+        // moving node into root position
+        if (newParent === TREE_AREA_ID) {
+          // remove this child from current parent child array
+          nextChildren = new MyMap(state.children).set(
+            currentParent,
+            state.children
+              .get(currentParent)
+              ?.filter((children) => children !== action.id) ?? []
+          );
+
+          // add this child to root nodes
+          nextRootNodeIds = new Set(state.rootNodeIds);
+          nextRootNodeIds.add(action.id);
+
+          // remove parent fo this child
+          nextParent = new MyMap(state.parent);
+          nextParent.delete(action.id);
+
+          return {
+            ...state,
+            children: nextChildren,
+            parent: nextParent,
+            rootNodeIds: nextRootNodeIds,
+          };
+        }
+
+        // remove this child from current parent child array
+        nextChildren = new MyMap(state.children).set(
+          currentParent,
+          state.children
+            .get(currentParent)
+            ?.filter((children) => children !== action.id) ?? []
+        );
+
+        // add this child to new parent child array
+        nextChildren.replace(newParent, [
+          ...(state.children.get(newParent) ?? []),
+          action.id,
+        ]);
+        // change parent of this child
+        nextParent = new MyMap(state.parent);
+        nextParent.replace(action.id, newParent);
+
+        return { ...state, children: nextChildren, parent: nextParent };
+      }
 
     default:
       throw new Error("Reducer received an unknown action");
