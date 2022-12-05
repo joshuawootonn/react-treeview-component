@@ -106,6 +106,7 @@ type ReducerState = {
   focusableId?: string | null;
   focusedId?: string | null;
   selectedId?: string | null;
+  copiedId?: string | null;
 };
 
 export enum TreeActionTypes {
@@ -121,6 +122,8 @@ export enum TreeActionTypes {
   OPEN = "OPEN",
   CLOSE = "CLOSE",
   MOVE = "MOVE",
+  COPY = "COPY",
+  PASTE = "PASTE",
 }
 
 type Actions =
@@ -157,6 +160,14 @@ type Actions =
       type: TreeActionTypes.MOVE;
       id: string;
       to: string;
+    }
+  | {
+      type: TreeActionTypes.COPY;
+      id: string;
+    }
+  | {
+      type: TreeActionTypes.PASTE;
+      to: string;
     };
 
 export function getNextFocusableNode(
@@ -167,7 +178,7 @@ export function getNextFocusableNode(
     const isCurrentOpen = state.isOpen.get(id);
     const currentChildren = state.children.get(id);
 
-    console.log(id, { isCurrentOpen, currentChildren });
+    // console.log(id, { isCurrentOpen, currentChildren });
 
     if (
       isCurrentOpen &&
@@ -381,6 +392,9 @@ function reducer(state: ReducerState, action: Actions): ReducerState {
 
       //root node
       if (currentParent == null) {
+        if (newParent === TREE_AREA_ID) {
+          return state;
+        }
         //remove node from root nodes
         nextRootNodeIds = new Set(state.rootNodeIds);
         nextRootNodeIds.delete(action.id);

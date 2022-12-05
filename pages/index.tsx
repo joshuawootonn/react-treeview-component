@@ -10,30 +10,37 @@ import {
   useSensors,
   MouseSensor,
   TouchSensor,
+  DragStartEvent,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import { TreeArea } from "components/tree-area";
 
 const Home: NextPage = () => {
   const mouseSensor = useSensor(MouseSensor, {
     // Require the mouse to move by 10 pixels before activating
-    activationConstraint: {
-      distance: 10,
-    },
+    // activationConstraint: {
+    //   distance: 10,
+    // },
   });
   const touchSensor = useSensor(TouchSensor, {
     // Press delay of 250ms, with tolerance of 5px of movement
-    activationConstraint: {
-      delay: 250,
-      tolerance: 5,
-    },
+    // activationConstraint: {
+    //   delay: 250,
+    //   tolerance: 5,
+    // },
   });
 
-  const sensors = useSensors(mouseSensor, touchSensor);
+  const keyboardSensor = useSensor(KeyboardSensor);
+
+  const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
   return (
     <motion.div className="flex flex-col justify-start items-start p-12 space-y-12">
       <button> Button before </button>
       <TreeViewProvider initialTree={data}>
         {({ rootNodeIds, dispatch }) => {
+          function handleDragStart(event: DragStartEvent) {
+            console.log("started dragging");
+          }
           function handleDragEnd(event: DragEndEvent) {
             console.log("end dropping");
             if (event.over && event.over.id != null) {
@@ -51,6 +58,7 @@ const Home: NextPage = () => {
               // required to make server and client attributes match
               id={"treeview"}
               sensors={sensors}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
               <TreeArea>

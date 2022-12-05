@@ -58,57 +58,58 @@ export function useTreeNode(id: string): {
       tabIndex: focusableId === id ? 0 : -1,
       onClick: function (event: MouseEvent) {
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
-        if (event.button === 0) {
-          event.stopPropagation();
+        // if (event.button === 0) {
+        //   event.stopPropagation();
 
-          if (metadata.isFolder) {
-            isOpen.get(id)
-              ? dispatch({ type: TreeActionTypes.CLOSE, id })
-              : dispatch({ type: TreeActionTypes.OPEN, id });
-          }
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
-          dispatch({ type: TreeActionTypes.SELECT, id });
-        }
+        //   if (metadata.isFolder) {
+        //     isOpen.get(id)
+        //       ? dispatch({ type: TreeActionTypes.CLOSE, id })
+        //       : dispatch({ type: TreeActionTypes.OPEN, id });
+        //   }
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
+        //   dispatch({ type: TreeActionTypes.SELECT, id });
+        // }
       },
       onKeyDown: function (event: KeyboardEvent) {
-        event.stopPropagation();
-        if (isHotkey("up", event)) {
-          const prevId = getPreviousFocusableNode(state, id);
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
-          elements.current.get(prevId)?.focus();
-        }
+        // console.log({ inNode: "yes" });
+        // event.stopPropagation();
+        // if (isHotkey("up", event)) {
+        //   const prevId = getPreviousFocusableNode(state, id);
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
+        //   elements.current.get(prevId)?.focus();
+        // }
 
-        if (isHotkey("down", event)) {
-          const nextId = getNextFocusableNode(state, id);
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
-          elements.current.get(nextId)?.focus();
-        }
+        // if (isHotkey("down", event)) {
+        //   const nextId = getNextFocusableNode(state, id);
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
+        //   elements.current.get(nextId)?.focus();
+        // }
 
-        if (isHotkey("left", event)) {
-          dispatch({ type: TreeActionTypes.CLOSE, id });
-        }
+        // if (isHotkey("left", event)) {
+        //   dispatch({ type: TreeActionTypes.CLOSE, id });
+        // }
 
-        if (isHotkey("right", event)) {
-          dispatch({ type: TreeActionTypes.OPEN, id });
-        }
+        // if (isHotkey("right", event)) {
+        //   dispatch({ type: TreeActionTypes.OPEN, id });
+        // }
 
-        if (!isFolder && isHotkey("space", event)) {
-          dispatch({ type: TreeActionTypes.SELECT, id });
-        }
+        // if (!isFolder && isHotkey("space", event)) {
+        //   dispatch({ type: TreeActionTypes.SELECT, id });
+        // }
 
-        if (isFolder && isHotkey("space", event)) {
-          isOpen.get(id)
-            ? dispatch({ type: TreeActionTypes.OPEN, id })
-            : dispatch({ type: TreeActionTypes.CLOSE, id });
-        }
+        // if (isFolder && isHotkey("space", event)) {
+        //   isOpen.get(id)
+        //     ? dispatch({ type: TreeActionTypes.OPEN, id })
+        //     : dispatch({ type: TreeActionTypes.CLOSE, id });
+        // }
       },
       onFocus: function (event: FocusEvent) {
-        event.stopPropagation();
-        dispatch({ type: TreeActionTypes.FOCUS, id });
+        // event.stopPropagation();
+        // dispatch({ type: TreeActionTypes.FOCUS, id });
       },
       onBlur: function (event: FocusEvent) {
-        event.stopPropagation();
-        dispatch({ type: TreeActionTypes.BLUR, id });
+        // event.stopPropagation();
+        // dispatch({ type: TreeActionTypes.BLUR, id });
       },
     }),
   };

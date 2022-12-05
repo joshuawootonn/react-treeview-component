@@ -36,34 +36,34 @@ export function useTreeArea(id: string): {
       },
       tabIndex: focusableId === id ? 0 : -1,
       onClick: function (event: MouseEvent) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
-        if (event.button === 0) {
-          event.stopPropagation();
+        // // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+        // if (event.button === 0) {
+        //   event.stopPropagation();
 
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
-        }
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
+        // }
       },
       onKeyDown: function (event: KeyboardEvent) {
-        event.stopPropagation();
-        if (isHotkey("up", event)) {
-          const prevId = getPreviousFocusableNode(state, id);
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
-          elements.current.get(prevId)?.focus();
-        }
+        // event.stopPropagation();
+        // if (isHotkey("up", event)) {
+        //   const prevId = getPreviousFocusableNode(state, id);
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
+        //   elements.current.get(prevId)?.focus();
+        // }
 
-        if (isHotkey("down", event)) {
-          const nextId = getNextFocusableNode(state, id);
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
-          elements.current.get(nextId)?.focus();
-        }
+        // if (isHotkey("down", event)) {
+        //   const nextId = getNextFocusableNode(state, id);
+        //   dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
+        //   elements.current.get(nextId)?.focus();
+        // }
       },
       onFocus: function (event: FocusEvent) {
-        event.stopPropagation();
-        dispatch({ type: TreeActionTypes.FOCUS, id });
+        // event.stopPropagation();
+        // dispatch({ type: TreeActionTypes.FOCUS, id });
       },
       onBlur: function (event: FocusEvent) {
-        event.stopPropagation();
-        dispatch({ type: TreeActionTypes.BLUR, id });
+        // event.stopPropagation();
+        // dispatch({ type: TreeActionTypes.BLUR, id });
       },
     }),
   };

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTreeNode } from "lib/useTreeNode";
 import { Folder, File, Arrow } from "./icons";
 import { useDroppable, useDraggable } from "@dnd-kit/core";
+import { Handle } from "./handle";
+import { useSortable } from "@dnd-kit/sortable";
 
 type TreeNodeProps = {
   id: string;
@@ -23,7 +25,7 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
     attributes,
     listeners,
     setNodeRef: setDraggableNodeRef,
-  } = useDraggable({
+  } = useSortable({
     id: id,
   });
 
@@ -32,7 +34,7 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
     disabled: !metadata.isFolder,
   });
 
-  const { ref, ...treeNodeProps } = getTreeNodeProps();
+  const { ref, tabIndex, ...treeNodeProps } = getTreeNodeProps();
 
   return (
     <li
@@ -47,9 +49,8 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
         setDroppabledNodeRef(element);
         ref(element);
       }}
-      {...listeners}
-      {...attributes}
       {...treeNodeProps}
+      // tabIndex={tabIndex}
       role="treeitem"
     >
       <div
@@ -69,9 +70,10 @@ export function TreeNode({ id, isRoot }: TreeNodeProps) {
         ) : (
           <File className="h-5 w-5" />
         )}
-        <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden">
+        <span className="font-mono font-medium text-ellipsis whitespace-nowrap overflow-hidden flex-grow">
           {metadata.name}
         </span>
+        <Handle {...attributes} {...listeners} tabIndex={0} />
       </div>
       <AnimatePresence initial={false}>
         {isOpen && (
