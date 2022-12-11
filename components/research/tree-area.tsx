@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import classNames from "classnames";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTreeArea } from "lib/useTreeArea";
+import { useTreeArea } from "lib/research/useTreeArea";
 import { MouseEvent, ReactNode } from "react";
 
 type TreeAreaProps = { children: ReactNode };
@@ -36,7 +36,7 @@ export function TreeArea({ children }: TreeAreaProps) {
       <AnimatePresence>
         {pasteIntoTreeArea && (
           <motion.button
-            onMouseDown={function (event: MouseEvent) {
+            onClick={function (event: MouseEvent) {
               event.preventDefault();
               pasteIntoTreeArea();
             }}

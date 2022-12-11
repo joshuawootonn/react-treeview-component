@@ -5,21 +5,14 @@ import {
   getPreviousFocusableNode,
   TreeViewContext,
   TreeViewContextType,
-  TreeNodeMetadataType,
 } from "./treeContext";
 import isHotkey from "is-hotkey";
+import { TREE_AREA_ID } from "components/research/tree-area";
 
-export function useTreeNode(id: string): {
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
+export function useTreeArea(id: string): {
   isFocused: boolean;
-  isSelected: boolean;
-  children: string[];
-  metadata: TreeNodeMetadataType;
-  copy: () => void;
-  paste: () => void;
-  getTreeNodeProps: () => {
+  pasteIntoTreeArea: (() => void) | null;
+  getTreeAreaProps: () => {
     ref: (current: HTMLElement | null) => void;
     tabIndex: number;
     onClick: (event: MouseEvent) => void;
@@ -30,33 +23,25 @@ export function useTreeNode(id: string): {
 } {
   const { state, dispatch, elements } =
     useContext<TreeViewContextType>(TreeViewContext);
-  const { isOpen, focusableId } = state;
-  const isFolder = state.children.get(id)?.length;
-  const metadata = state.metadata.get(id) ?? {
-    name: "Untitled",
-    isFolder: false,
-  };
+  const { focusableId, copiedId } = state;
+
+  // console.log({ focusedId: state.focusedId });
 
   return {
-    isOpen: isOpen.get(id) ?? false,
-    open: function () {
-      dispatch({ type: TreeActionTypes.OPEN, id });
-    },
-    close: function () {
-      dispatch({ type: TreeActionTypes.CLOSE, id });
-    },
     isFocused: state.focusedId === id,
-    isSelected: state.selectedId === id,
-    children: state.children.get(id) ?? [],
-    copy: function () {
-      dispatch({ type: TreeActionTypes.COPY, id });
-    },
-    paste: function () {
-      dispatch({ type: TreeActionTypes.PASTE, to: id });
-      elements.current.get(state.selectedId ?? "")?.focus();
-    },
-    metadata,
-    getTreeNodeProps: () => ({
+    pasteIntoTreeArea:
+      copiedId != null
+        ? function () {
+            dispatch({ type: TreeActionTypes.PASTE, to: TREE_AREA_ID });
+            dispatch({ type: TreeActionTypes.SELECT, id: copiedId });
+            dispatch({
+              type: TreeActionTypes.SET_FOCUSABLE,
+              id: copiedId,
+            });
+            dispatch({ type: TreeActionTypes.FOCUS, id: copiedId });
+          }
+        : null,
+    getTreeAreaProps: () => ({
       ref: function (current: HTMLElement | null) {
         if (current) {
           elements.current.set(id, current);
@@ -70,13 +55,7 @@ export function useTreeNode(id: string): {
         if (event.button === 0) {
           event.stopPropagation();
 
-          if (metadata.isFolder) {
-            isOpen.get(id)
-              ? dispatch({ type: TreeActionTypes.CLOSE, id })
-              : dispatch({ type: TreeActionTypes.OPEN, id });
-          }
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
-          dispatch({ type: TreeActionTypes.SELECT, id });
         }
       },
       onKeyDown: function (event: KeyboardEvent) {
@@ -93,33 +72,6 @@ export function useTreeNode(id: string): {
           elements.current.get(nextId)?.focus();
         }
 
-        if (isHotkey("left", event)) {
-          dispatch({ type: TreeActionTypes.CLOSE, id });
-        }
-
-        if (isHotkey("right", event)) {
-          dispatch({ type: TreeActionTypes.OPEN, id });
-        }
-
-        if (isHotkey("space", event)) {
-          dispatch({ type: TreeActionTypes.SELECT, id });
-        }
-
-        console.log({
-          isFolder: !!isFolder,
-          isSpace: isHotkey("space", event),
-          isOpen: isOpen.get(id),
-        });
-        if (isFolder && isHotkey("space", event)) {
-          isOpen.get(id)
-            ? dispatch({ type: TreeActionTypes.CLOSE, id })
-            : dispatch({ type: TreeActionTypes.OPEN, id });
-        }
-
-        if (isHotkey("cmd+c", event)) {
-          dispatch({ type: TreeActionTypes.COPY, id });
-        }
-
         if (isHotkey("cmd+v", event) && state.copiedId != null) {
           dispatch({ type: TreeActionTypes.PASTE, to: id });
           dispatch({ type: TreeActionTypes.SELECT, id: state.copiedId });
@@ -128,18 +80,17 @@ export function useTreeNode(id: string): {
             id: state.copiedId,
           });
           dispatch({ type: TreeActionTypes.FOCUS, id: state.copiedId });
-
         }
       },
       onFocus: function (event: FocusEvent) {
         event.stopPropagation();
+        console.log("your click is just focusing the tree-area");
+
         dispatch({ type: TreeActionTypes.FOCUS, id });
-        console.log({ type: TreeActionTypes.FOCUS, id });
       },
       onBlur: function (event: FocusEvent) {
         event.stopPropagation();
         dispatch({ type: TreeActionTypes.BLUR, id });
-        console.log({ type: TreeActionTypes.BLUR, id });
       },
     }),
   };

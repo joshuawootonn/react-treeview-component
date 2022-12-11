@@ -1,4 +1,4 @@
-import { MyTreeNodeForArray, TreeNodeType } from "./types";
+import { TreeNodeType } from "./types";
 
 export const data: TreeNodeType[] = [
   {

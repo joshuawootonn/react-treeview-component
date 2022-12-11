@@ -20,7 +20,6 @@ export class MyMap<K, V> {
     this.map.set(key, value);
     return this;
   };
-
   delete = (key: K): this => {
     this.map.delete(key);
     return this;

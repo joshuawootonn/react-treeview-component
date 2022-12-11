@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTreeNode } from "lib/useTreeNode";
-import { Folder, File, Arrow, Ellipse } from "./icons";
+import { useTreeNode } from "lib/research/useTreeNode";
+import { Folder, File, Arrow, Ellipse } from "components/common/icons";
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { Menu, Transition } from "@headlessui/react";
-import { MouseEvent, KeyboardEvent, Fragment } from "react";
+import { MouseEvent, KeyboardEvent, FocusEvent, Fragment } from "react";
 
 type TreeNodeProps = {
   id: string;
@@ -62,7 +62,7 @@ export function TreeNode({ id }: TreeNodeProps) {
     >
       <div
         className={classNames(
-          "flex flex-row items-center border-[1.5px] rounded-sm space-x-2",
+          "group flex flex-row items-center border-[1.5px] rounded-sm space-x-2",
           isFocused
             ? "border-slate-400 focus-within:border-transparent"
             : "border-transparent",
@@ -86,7 +86,7 @@ export function TreeNode({ id }: TreeNodeProps) {
         <Menu
           as="div"
           className={classNames(
-            "flex items-center relative text-left opacity-0 ",
+            "flex items-center relative text-left opacity-0 focus-within:opacity-100 group-hover:opacity-100",
             isFocused && "opacity-100"
           )}
           onClick={function (event: MouseEvent) {
@@ -95,18 +95,22 @@ export function TreeNode({ id }: TreeNodeProps) {
           onKeyDown={function (event: KeyboardEvent) {
             event.stopPropagation();
           }}
+          onBlur={function (event: FocusEvent) {
+            event.stopPropagation();
+          }}
+          onFocus={function (event: FocusEvent) {
+            event.stopPropagation();
+          }}
         >
           <Menu.Button
             onClick={function (event: MouseEvent) {
               event.stopPropagation();
-              console.log("cliked menu");
             }}
             onKeyDown={function (event: KeyboardEvent) {
               event.stopPropagation();
-              console.log("copy - keydown");
             }}
             tabIndex={tabIndex}
-            className="m-1 border-[1.5px] transform rounded-sm border-transparent focus-visible:border-slate-400 focus-visible:outline-none "
+            className="m-1 border-[1.5px] transform rounded-sm border-transparent focus-visible:border-slate-400 focus-visible:outline-none  "
           >
             <Ellipse className="h-5 w-5" />
           </Menu.Button>

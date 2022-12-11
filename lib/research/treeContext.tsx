@@ -1,4 +1,3 @@
-import { TREE_AREA_ID } from "components/tree-area";
 import React, {
   Dispatch,
   MutableRefObject,
@@ -7,8 +6,9 @@ import React, {
   useReducer,
   useRef,
 } from "react";
-import { MyMap } from "./MyMap";
-import { TreeNodeType } from "./types";
+import { MyMap } from "../common/MyMap";
+import { TreeNodeType } from "../common/types";
+
 export type TreeType = {
   state: ReducerState;
   dispatch: Dispatch<Actions>;
@@ -37,6 +37,8 @@ function getInitialMetadata(
   }, []);
 }
 
+export const TREE_AREA_ID = "tree-area";
+
 function getInitialChildren(rootNodes: TreeNodeType[]): [string, string[]][] {
   if ("children"! in rootNodes) return [];
 
@@ -59,13 +61,9 @@ function getInitialChildren(rootNodes: TreeNodeType[]): [string, string[]][] {
     );
   }
 
-  return traverse(
-    rootNodes,
-    rootNodes.map((n): [string, string[]] => [
-      TREE_AREA_ID,
-      rootNodes.map((node) => node.id),
-    ])
-  );
+  return traverse(rootNodes, [
+    [TREE_AREA_ID, rootNodes.map((node) => node.id)],
+  ]);
 }
 
 function getInitialParents(rootNodes: TreeNodeType[]): [string, string][] {
