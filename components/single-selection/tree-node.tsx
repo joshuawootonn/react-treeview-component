@@ -32,7 +32,7 @@ export function TreeNode({ id }: TreeNodeProps) {
           isFocused
             ? "border-slate-400 focus-within:border-transparent"
             : "border-transparent",
-          isSelected ? "bg-slate-300" : "bg-transparent"
+          isSelected ? "bg-slate-200" : "bg-transparent"
         )}
       >
         {metadata.isFolder ? (
@@ -64,7 +64,7 @@ export function TreeNode({ id }: TreeNodeProps) {
               height: 0,
               transition: {
                 duration: 0.25,
-                ease: [0.165, 0.84, 0.44, 1],
+                ease: "easeInOut",
               },
             }}
           >
@@ -93,8 +93,10 @@ export function TreeNode({ id }: TreeNodeProps) {
               transition: {
                 height: {
                   duration: 0.25,
+                  ease: "easeInOut",
                 },
                 opacity: {
+                  ease: "easeInOut",
                   duration: 0.2,
                   delay: 0.05,
                 },
@@ -106,8 +108,10 @@ export function TreeNode({ id }: TreeNodeProps) {
               transition: {
                 height: {
                   duration: 0.25,
+                  ease: "easeInOut",
                 },
                 opacity: {
+                  ease: "easeInOut",
                   duration: 0.2,
                 },
               },
