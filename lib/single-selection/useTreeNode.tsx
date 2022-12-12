@@ -7,10 +7,12 @@ import {
   getFirstChildNode,
   getFirstNode,
   getLastNode,
+  getNextByTypeahead,
   getNextFocusable,
   getParentNode,
   getPreviousFocusable,
 } from "./tree-traversal";
+import { TreeNodeMetadataType } from "lib/research/treeContext";
 
 export function useTreeNode(id: string): {
   isOpen: boolean;
@@ -117,10 +119,7 @@ export function useTreeNode(id: string): {
         }
 
         if (isHotkey("end", event)) {
-          console.log("in hotkey");
-
           const id = getLastNode(state);
-          console.log({ id });
 
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
           elements.current.get(id)?.focus();
@@ -134,6 +133,13 @@ export function useTreeNode(id: string): {
           isOpen
             ? dispatch({ type: TreeActionTypes.CLOSE, id })
             : dispatch({ type: TreeActionTypes.OPEN, id });
+        }
+
+        if (/^[a-z]$/i.test(event.key) && state.focusedId) {
+          const id = getNextByTypeahead(state, event.key);
+
+          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id });
+          elements.current.get(id)?.focus();
         }
       },
       onFocus: function (event: FocusEvent) {

@@ -131,3 +131,24 @@ export function getPreviousFocusable(
     return traverse(children.at(children.length - 1) ?? id);
   }
 }
+
+export function getNextByTypeahead(state: TreeState, typeaheadValue: string) {
+  function traverse(state: TreeState, key: string, id: string): string {
+    const lastId = getLastNode(state);
+    const nextId =
+      id === lastId ? getFirstNode(state) : getNextFocusable(state, id);
+    const name = state.metadata.get(nextId)?.name;
+
+    if (name?.charAt(0).toLowerCase() === key.charAt(0).toLowerCase()) {
+      return nextId;
+    }
+
+    return traverse(state, nextId, key);
+  }
+
+  return traverse(
+    state,
+    typeaheadValue,
+    state.focusedId ?? getFirstNode(state)
+  );
+}
