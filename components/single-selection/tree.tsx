@@ -4,15 +4,10 @@ import { TreeNode } from "./tree-node";
 
 export function Tree() {
   return (
-    <TreeViewProvider initialTree={data}>
-      {({ rootNodeIds }) => (
-        <ul
-          role="tree"
-          aria-label="File Manager"
-          aria-multiselectable="false"
-          className="h-full overflow-auto"
-        >
-          {rootNodeIds.map((id) => (
+    <TreeViewProvider initialTree={data} label="File manager">
+      {({ treeProps, rootIds }) => (
+        <ul {...treeProps} className="h-full overflow-auto">
+          {rootIds.map((id) => (
             <TreeNode id={id} key={id} />
           ))}
         </ul>

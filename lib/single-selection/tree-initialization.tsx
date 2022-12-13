@@ -1,7 +1,9 @@
+// todo: the initialization calls are really verbose and could be combined.
+
 import { MyMap } from "lib/common/MyMap";
 import { TreeNodeType } from "lib/common/types";
 import { TreeState } from "./tree-state";
-import { TreeNodeMetadata, TREE_AREA_ID } from "./tree-state";
+import { TreeNodeMetadata, TREE_ID } from "./tree-state";
 
 export function getInitialMetadata(
   nodes: TreeNodeType[]
@@ -45,9 +47,7 @@ export function getInitialChildren(
     );
   }
 
-  return traverse(rootNodes, [
-    [TREE_AREA_ID, rootNodes.map((node) => node.id)],
-  ]);
+  return traverse(rootNodes, [[TREE_ID, rootNodes.map((node) => node.id)]]);
 }
 
 export function getInitialParents(
@@ -79,7 +79,7 @@ export function getInitialParents(
 
   return traverse(
     rootNodes,
-    rootNodes.map((node) => [node.id, TREE_AREA_ID])
+    rootNodes.map((node) => [node.id, TREE_ID])
   );
 }
 

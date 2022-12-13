@@ -43,7 +43,7 @@ export type TreeActions =
       id: string;
     };
 
-export const TREE_AREA_ID = "tree-area";
+export const TREE_ID = "tree";
 
 export function treeReducer(state: TreeState, action: TreeActions): TreeState {
   switch (action.type) {

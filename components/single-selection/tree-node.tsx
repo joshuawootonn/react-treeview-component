@@ -13,6 +13,7 @@ export function TreeNode({ id }: TreeNodeProps) {
     isFocused,
     isSelected,
     getTreeNodeProps,
+    treeGroupProps,
     children,
     metadata,
   } = useTreeNode(id);
@@ -22,8 +23,6 @@ export function TreeNode({ id }: TreeNodeProps) {
       className={classNames(
         "relative cursor-pointer select-none flex flex-col focus:outline-none"
       )}
-      aria-expanded={metadata.isFolder && isOpen}
-      role="treeitem"
       {...getTreeNodeProps()}
     >
       <div
@@ -57,7 +56,7 @@ export function TreeNode({ id }: TreeNodeProps) {
             preserveAspectRatio="none"
             width={2}
             xmlns="http://www.w3.org/2000/svg"
-            className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2.5 transform -translate-x-1/2 stroke-slate-200"
+            className="absolute top-[30px] h-[calc(100%-36px)] bottom-0 left-2.5 transform -translate-x-1/2 stroke-slate-200 z-[-1]"
             key={id + "line"}
             stroke="currentColor"
             exit={{
@@ -82,6 +81,7 @@ export function TreeNode({ id }: TreeNodeProps) {
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.ul
+            {...treeGroupProps}
             key={id + "ul"}
             initial={{
               height: 0,

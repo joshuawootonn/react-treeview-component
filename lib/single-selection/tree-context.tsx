@@ -9,12 +9,7 @@ import React, {
 import { MyMap } from "lib/common/MyMap";
 import { TreeNodeType } from "lib/common/types";
 import { getInitialTreeState } from "./tree-initialization";
-import {
-  TreeActions,
-  treeReducer,
-  TreeState,
-  TREE_AREA_ID,
-} from "./tree-state";
+import { TreeActions, treeReducer, TreeState, TREE_ID } from "./tree-state";
 
 export type TreeViewContextType = {
   state: TreeState;
@@ -30,20 +25,28 @@ export const TreeViewContext = React.createContext<TreeViewContextType>({
 
 type TreeViewProviderProps = {
   children: ({
-    rootNodeIds,
+    rootIds,
     dispatch,
+    treeProps,
   }: {
-    rootNodeIds: string[];
+    treeProps: {
+      role: "tree";
+      ["aria-label"]: string;
+      ["aria-multi-selectable"]: "false";
+    };
+    rootIds: string[];
     dispatch: React.Dispatch<TreeActions>;
     elements: RefObject<MyMap<string, HTMLElement>>;
     state: TreeState;
   }) => ReactNode | ReactNode[];
   initialTree: TreeNodeType[];
+  label: string;
 };
 
 export function TreeViewProvider({
   children,
   initialTree,
+  label,
 }: TreeViewProviderProps) {
   const elements = useRef<MyMap<string, HTMLElement>>(new MyMap());
   const [state, dispatch] = useReducer(
@@ -54,7 +57,12 @@ export function TreeViewProvider({
   return (
     <TreeViewContext.Provider value={{ dispatch, elements, state }}>
       {children({
-        rootNodeIds: state.children.get(TREE_AREA_ID) ?? [],
+        treeProps: {
+          role: "tree",
+          "aria-label": label,
+          "aria-multi-selectable": "false",
+        },
+        rootIds: state.children.get(TREE_ID) ?? [],
         dispatch,
         elements,
         state,

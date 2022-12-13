@@ -1,8 +1,8 @@
 import { TreeState } from "./tree-state";
-import { TREE_AREA_ID } from "./tree-state";
+import { TREE_ID } from "./tree-state";
 
 export function getFirstNode(state: TreeState): string {
-  return state.children.get(TREE_AREA_ID)?.at(0) ?? TREE_AREA_ID;
+  return state.children.get(TREE_ID)?.at(0) ?? TREE_ID;
 }
 
 export function getLastNode(state: TreeState): string {
@@ -22,7 +22,7 @@ export function getLastNode(state: TreeState): string {
     return lastChildId;
   }
 
-  return traverse(TREE_AREA_ID);
+  return traverse(TREE_ID);
 }
 
 export function getParentNode(state: TreeState, childId: string): string {
@@ -37,8 +37,8 @@ export function getNextFocusable(state: TreeState, originalId: string): string {
   return traverse(originalId);
 
   function traverse(id: string, prevId?: string): string {
-    if (id === TREE_AREA_ID) {
-      let arr = state.children.get(TREE_AREA_ID);
+    if (id === TREE_ID) {
+      let arr = state.children.get(TREE_ID);
       if (!arr) return id;
 
       if (prevId) {
@@ -86,8 +86,8 @@ export function getPreviousFocusable(
   state: TreeState,
   originalId: string
 ): string {
-  if (originalId === TREE_AREA_ID) {
-    return TREE_AREA_ID;
+  if (originalId === TREE_ID) {
+    return TREE_ID;
   }
   const parent = state.parent.get(originalId);
   if (parent) {

@@ -2,7 +2,7 @@ import { useContext, FocusEvent, MouseEvent, KeyboardEvent } from "react";
 import isHotkey from "is-hotkey";
 
 import { TreeViewContextType, TreeViewContext } from "./tree-context";
-import { TreeActionTypes, TREE_AREA_ID, TREE_ID } from "./tree-state";
+import { TreeActionTypes, TREE_ID } from "./tree-state";
 import {
   getFirstChildNode,
   getFirstNode,
@@ -25,10 +25,16 @@ export function useTreeNode(id: string): {
   getTreeNodeProps: () => {
     ref: (current: HTMLElement | null) => void;
     tabIndex: number;
+    ["aria-expanded"]: boolean;
+    ["aria-selected"]: boolean;
+    role: "treeitem";
     onClick: (event: MouseEvent) => void;
     onKeyDown: (event: KeyboardEvent) => void;
     onBlur: (event: FocusEvent) => void;
     onFocus: (event: FocusEvent) => void;
+  };
+  treeGroupProps: {
+    role: "group";
   };
 } {
   const { state, dispatch, elements } =
@@ -62,6 +68,9 @@ export function useTreeNode(id: string): {
           elements.current.delete(id);
         }
       },
+      ["aria-expanded"]: metadata.isFolder && isOpen,
+      ["aria-selected"]: state.selectedId === id,
+      role: "treeitem",
       tabIndex: focusableId === id ? 0 : -1,
       onClick: function (event: MouseEvent) {
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
@@ -81,12 +90,14 @@ export function useTreeNode(id: string): {
       onKeyDown: function (event: KeyboardEvent) {
         event.stopPropagation();
         if (isHotkey("up", event)) {
+          event.preventDefault();
           const prevId = getPreviousFocusable(state, id);
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: prevId });
           elements.current.get(prevId)?.focus();
         }
 
         if (isHotkey("down", event)) {
+          event.preventDefault();
           const nextId = getNextFocusable(state, id);
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
           elements.current.get(nextId)?.focus();
@@ -126,6 +137,7 @@ export function useTreeNode(id: string): {
         }
 
         if (isHotkey("space", event)) {
+          event.preventDefault();
           dispatch({ type: TreeActionTypes.SELECT, id });
         }
 
@@ -151,5 +163,8 @@ export function useTreeNode(id: string): {
         dispatch({ type: TreeActionTypes.BLUR, id });
       },
     }),
+    treeGroupProps: {
+      role: "group",
+    },
   };
 }
