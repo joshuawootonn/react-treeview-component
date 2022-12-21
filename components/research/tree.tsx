@@ -7,7 +7,7 @@ import {
   DndContext,
 } from "@dnd-kit/core";
 import { motion } from "framer-motion";
-import { data } from "lib/common/initialValue";
+import { initialValue } from "lib/common/initialValue";
 import { TreeViewProvider, TreeActionTypes } from "lib/research/treeContext";
 import { useEffect } from "react";
 import { TreeArea } from "./tree-area";
@@ -42,7 +42,7 @@ export const InitialResearchTree = () => {
   return (
     <motion.div className="flex flex-col justify-start items-start p-12 space-y-12">
       <button> Button before </button>
-      <TreeViewProvider initialTree={data}>
+      <TreeViewProvider initialTree={initialValue}>
         {({ rootNodeIds, dispatch }) => {
           function handleDragEnd(event: DragEndEvent) {
             console.log("end dropping");

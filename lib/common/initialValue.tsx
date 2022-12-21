@@ -1,6 +1,6 @@
 import { TreeNodeType } from "./types";
 
-export const data: TreeNodeType[] = [
+export const initialValue: TreeNodeType[] = [
   {
     id: "1",
     name: "A - 1",

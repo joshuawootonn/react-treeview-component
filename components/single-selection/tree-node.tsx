@@ -2,6 +2,7 @@ import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTreeNode } from "lib/single-selection/useTreeNode";
 import { Folder, File, Arrow } from "components/common/icons";
+import { TreeNodeType } from "lib/common/types";
 
 type TreeNodeProps = {
   id: string;
@@ -116,7 +117,7 @@ export function TreeNode({ id }: TreeNodeProps) {
                 },
               },
             }}
-            className="[&>li]:ml-4"
+            className="pl-4"
           >
             {children?.map((childNodeId) => {
               return <TreeNode key={id + childNodeId} id={childNodeId} />;
@@ -127,3 +128,5 @@ export function TreeNode({ id }: TreeNodeProps) {
     </li>
   );
 }
+
+
