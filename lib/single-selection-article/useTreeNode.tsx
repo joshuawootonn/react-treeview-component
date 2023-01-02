@@ -9,6 +9,7 @@ import { getNextNode, getPreviousNode } from './tree-traversal'
 
 export function useTreeNode(id: string): {
   isSelected: boolean
+  isOpen: boolean
   treeNodeProps: {
     ref: (current: HTMLElement | null) => void
     tabIndex: number
@@ -19,8 +20,11 @@ export function useTreeNode(id: string): {
   const { state, dispatch, elements } =
     useContext<TreeViewContextType>(TreeViewContext)
 
+  const isFolder = state.children.get(id) != null
+  const isOpen = state.isOpen.get(id)
   return {
     isSelected: state.selectedId === id,
+    isOpen: state.isOpen.get(id) ?? false,
     treeNodeProps: {
       ref: function (current: HTMLElement | null) {
         if (current) {
@@ -33,6 +37,11 @@ export function useTreeNode(id: string): {
       onClick: function (e: MouseEvent) {
         e.stopPropagation()
         dispatch({ type: TreeActionTypes.SELECT, id })
+        if (isFolder) {
+          isOpen
+            ? dispatch({ type: TreeActionTypes.CLOSE, id })
+            : dispatch({ type: TreeActionTypes.OPEN, id })
+        }
       },
       onKeyDown: function (e: KeyboardEvent) {
         e.stopPropagation()
@@ -44,6 +53,12 @@ export function useTreeNode(id: string): {
         if (isHotkey('up', e)) {
           const prevNode = getPreviousNode(state, id)
           elements.current.get(prevNode)?.focus()
+        }
+        if (isFolder && isHotkey('left', e)) {
+          dispatch({ type: TreeActionTypes.CLOSE, id })
+        }
+        if (isFolder && isHotkey('right', e)) {
+          dispatch({ type: TreeActionTypes.OPEN, id })
         }
         if (isHotkey('space', e) || isHotkey('enter', e)) {
           dispatch({ type: TreeActionTypes.SELECT, id: id })

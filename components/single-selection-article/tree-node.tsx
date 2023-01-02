@@ -7,7 +7,7 @@ type TreeNodeProps = {
 }
 
 export function TreeNode({ node }: TreeNodeProps) {
-  const { isSelected, treeNodeProps } = useTreeNode(node.id)
+  const { isSelected, isOpen, treeNodeProps } = useTreeNode(node.id)
   return (
     <li
       className={classNames(
@@ -23,11 +23,13 @@ export function TreeNode({ node }: TreeNodeProps) {
       >
         {node.name}
       </div>
-      <ul className="pl-4 ">
-        {node.children?.map(node => (
-          <TreeNode key={node.id} node={node} />
-        ))}
-      </ul>
+      {isOpen && (
+        <ul className="pl-4 ">
+          {node.children?.map(node => (
+            <TreeNode key={node.id} node={node} />
+          ))}
+        </ul>
+      )}
     </li>
   )
 }

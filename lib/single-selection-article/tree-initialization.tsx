@@ -100,5 +100,6 @@ export function getInitialTreeState(
     ),
     parent: new MyMap<string, string>(getInitialParent(rootNodes)),
     selectedId: null,
+    isOpen: new MyMap<string, boolean>([[TREE_ID, true]]),
   }
 }

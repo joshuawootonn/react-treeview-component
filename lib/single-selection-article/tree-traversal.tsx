@@ -1,5 +1,4 @@
 import { TreeState } from './tree-context'
-import { TREE_ID } from './tree-initialization'
 
 export function getNextNode(
   state: TreeState,
@@ -7,8 +6,9 @@ export function getNextNode(
   prevId?: string,
 ): string {
   const children = state.children.get(id)
+  const isOpen = state.isOpen.get(id)
 
-  if (children != null && children.length > 0) {
+  if (isOpen && children != null && children.length > 0) {
     const currentNode = children.findIndex(
       childId => childId === prevId,
     )
@@ -30,12 +30,12 @@ export function getNextNode(
 }
 
 function getDeepestChild(state: TreeState, id: string): string {
-  const children = state.children.get(id)
+  const isOpen = state.isOpen.get(id)
+  if (!isOpen) return id
 
+  const children = state.children.get(id)
   const deeperChild = children?.at(children.length - 1)
-  if (deeperChild == null) {
-    return id
-  }
+  if (deeperChild == null) return id
   return getDeepestChild(state, deeperChild)
 }
 

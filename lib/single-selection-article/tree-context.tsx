@@ -6,26 +6,33 @@ import {
   ReactNode,
   useReducer,
   MutableRefObject,
-  createRef,
   useRef,
 } from 'react'
-import {
-  getInitialChildren,
-  getInitialParent,
-  getInitialTreeState,
-} from './tree-initialization'
+import { getInitialTreeState } from './tree-initialization'
 
 export type TreeState = {
   selectedId: string | null
+  isOpen: MyMap<string, boolean>
   children: MyMap<string, string[]>
   parent: MyMap<string, string>
 }
 
 export enum TreeActionTypes {
   SELECT = 'SELECT',
+  OPEN = 'OPEN',
+  CLOSE = 'CLOSE',
 }
 
-export type TreeActions = { type: TreeActionTypes.SELECT; id: string }
+export type TreeActions =
+  | { type: TreeActionTypes.SELECT; id: string }
+  | {
+      type: TreeActionTypes.OPEN
+      id: string
+    }
+  | {
+      type: TreeActionTypes.CLOSE
+      id: string
+    }
 
 export type TreeViewContextType = {
   state: TreeState
@@ -37,6 +44,7 @@ export const TreeViewContext = createContext<TreeViewContextType>({
   elements: { current: new MyMap() },
   state: {
     selectedId: null,
+    isOpen: new MyMap(),
     children: new MyMap(),
     parent: new MyMap(),
   },
@@ -56,6 +64,16 @@ export function reducer(
       return {
         ...state,
         selectedId: action.id,
+      }
+    case TreeActionTypes.OPEN:
+      return {
+        ...state,
+        isOpen: new MyMap(state.isOpen).set(action.id, true),
+      }
+    case TreeActionTypes.CLOSE:
+      return {
+        ...state,
+        isOpen: new MyMap(state.isOpen).set(action.id, false),
       }
     default:
       return state
