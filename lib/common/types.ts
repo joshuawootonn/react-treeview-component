@@ -5,3 +5,4 @@ export type TreeNodeType = {
   isFolder?: boolean;
   isExpanded?: boolean;
 };
+

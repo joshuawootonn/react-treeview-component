@@ -1,13 +1,13 @@
 import { TreeNodeType } from "./types";
 
-export const data: TreeNodeType[] = [
+export const initialValue: TreeNodeType[] = [
   {
     id: "1",
-    name: "Child - 1",
+    name: "A - 1",
     children: [
       {
         id: "2",
-        name: "Child - 2",
+        name: "A - 2",
         children: [
           {
             id: "3",
@@ -61,11 +61,11 @@ export const data: TreeNodeType[] = [
       },
       {
         id: "13",
-        name: "Child - 13",
+        name: "B - 13",
       },
       {
         id: "14",
-        name: "Child - 14",
+        name: "C - 14",
         children: [
           {
             id: "15",
@@ -81,11 +81,11 @@ export const data: TreeNodeType[] = [
   },
   {
     id: "17",
-    name: "Child - 17",
+    name: "B - 17",
     children: [
       {
         id: "18",
-        name: "Child - 18",
+        name: "C - 18",
         children: [
           {
             id: "19",
@@ -119,21 +119,21 @@ export const data: TreeNodeType[] = [
       },
       {
         id: "25",
-        name: "Child - 25",
+        name: "A - 25",
       },
       {
         id: "26",
-        name: "Child - 26",
+        name: "B - 26",
       },
     ],
   },
   {
     id: "27",
-    name: "Child - 27",
+    name: "C - 27",
     children: [
       {
         id: "28",
-        name: "Child - 28",
+        name: "B - 28",
         children: [
           {
             id: "29",
@@ -167,11 +167,11 @@ export const data: TreeNodeType[] = [
       },
       {
         id: "35",
-        name: "Child - 35",
+        name: "C - 35",
       },
       {
         id: "36",
-        name: "Child - 36",
+        name: "A - 36",
       },
     ],
   },
