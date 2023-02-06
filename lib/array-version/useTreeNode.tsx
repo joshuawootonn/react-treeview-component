@@ -3,21 +3,25 @@ import {
   FocusEvent,
   MouseEvent,
   KeyboardEvent,
+  useCallback,
 } from 'react'
 import isHotkey from 'is-hotkey'
 
 import { TreeViewContextType, TreeViewContext } from './tree-context'
-import { TreeActionTypes, TREE_ID } from './tree-state'
+import { TreeActionTypes } from './tree-state'
 import {
-  getFirstChildNode,
   getFirstNode,
   getLastNode,
   getNextByTypeahead,
   getNextFocusable,
-  getParentNode,
   getPreviousFocusable,
 } from './tree-traversal'
 import { TreeNodeMetadataType } from 'lib/research/treeContext'
+
+export type Item = {
+  id: string
+  element: HTMLElement
+}
 
 export function useTreeNode(id: string): {
   isOpen: boolean
@@ -46,11 +50,28 @@ export function useTreeNode(id: string): {
     useContext<TreeViewContextType>(TreeViewContext)
 
   const isOpen = state.isOpen.get(id) ?? false
+
   const metadata = state.metadata.get(id) ?? {
     name: 'Untitled',
     isFolder: false,
   }
   const children = state.children.get(id) ?? []
+
+  console.log(isOpen, metadata, children)
+
+  const getOrderedItems = useCallback((): Item[] => {
+    const root = document.querySelector('[data-root-lad]')
+    const lads = Array.from(
+      root?.querySelectorAll('[data-tree-lad]') ?? [],
+    )
+
+    const items = Array.from(elements.current.toMap())
+      .sort((a, b) => lads.indexOf(a[1]) - lads.indexOf(b[1]))
+      .map(([id, element]) => {
+        return { id, element }
+      })
+    return items
+  }, [])
 
   return {
     isOpen,
@@ -65,9 +86,9 @@ export function useTreeNode(id: string): {
       dispatch({ type: TreeActionTypes.CLOSE, id })
     },
     getTreeNodeProps: () => ({
-      ref: function (current: HTMLElement | null) {
-        if (current) {
-          elements.current.set(id, current)
+      ref: function (element: HTMLElement | null) {
+        if (element) {
+          elements.current.set(id, element)
         } else {
           elements.current.delete(id)
         }
@@ -77,7 +98,8 @@ export function useTreeNode(id: string): {
       role: 'treeitem',
       tabIndex:
         state.selectedId === id ||
-        (state.selectedId == null && getFirstNode(state) === id)
+        (state.selectedId == null &&
+          getFirstNode(getOrderedItems()) === id)
           ? 0
           : -1,
       onClick: function (event: MouseEvent) {
@@ -99,7 +121,8 @@ export function useTreeNode(id: string): {
         event.stopPropagation()
         if (isHotkey('up', event)) {
           event.preventDefault()
-          const prevId = getPreviousFocusable(state, id)
+          const items = getOrderedItems()
+          const prevId = getPreviousFocusable(items, id)
           dispatch({
             type: TreeActionTypes.SET_FOCUSABLE,
             id: prevId,
@@ -109,16 +132,21 @@ export function useTreeNode(id: string): {
 
         if (isHotkey('down', event)) {
           event.preventDefault()
-          const nextId = getNextFocusable(state, id)
-          // dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id: nextId });
+          const items = getOrderedItems()
+          const nextId = getNextFocusable(items, id)
+          dispatch({
+            type: TreeActionTypes.SET_FOCUSABLE,
+            id: nextId,
+          })
           elements.current.get(nextId)?.focus()
         }
 
         if (isHotkey('left', event)) {
           if (isOpen && metadata.isFolder) {
             dispatch({ type: TreeActionTypes.CLOSE, id })
-          } else if (state.parent.get(id) !== TREE_ID) {
-            const prevId = getParentNode(state, id)
+          } else {
+            const items = getOrderedItems()
+            const prevId = getPreviousFocusable(items, id)
             dispatch({
               type: TreeActionTypes.SET_FOCUSABLE,
               id: prevId,
@@ -129,7 +157,8 @@ export function useTreeNode(id: string): {
 
         if (isHotkey('right', event)) {
           if (isOpen && metadata.isFolder) {
-            const nextId = getFirstChildNode(state, id)
+            const items = getOrderedItems()
+            const nextId = getNextFocusable(items, id)
             dispatch({
               type: TreeActionTypes.SET_FOCUSABLE,
               id: nextId,
@@ -141,14 +170,15 @@ export function useTreeNode(id: string): {
         }
 
         if (isHotkey('home', event)) {
-          const id = getFirstNode(state)
+          const items = getOrderedItems()
+          const id = getFirstNode(items)
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id })
           elements.current.get(id)?.focus()
         }
 
         if (isHotkey('end', event)) {
-          const id = getLastNode(state)
-
+          const items = getOrderedItems()
+          const id = getLastNode(items)
           dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id })
           elements.current.get(id)?.focus()
         }
@@ -165,11 +195,19 @@ export function useTreeNode(id: string): {
         }
 
         if (/^[a-z]$/i.test(event.key) && state.focusedId) {
-          // todo this needs to not break if the node doesn't exist
-          const id = getNextByTypeahead(state, event.key)
+          const items = getOrderedItems()
+          const nextId = getNextByTypeahead(
+            state,
+            items,
+            id,
+            event.key,
+          )
 
-          dispatch({ type: TreeActionTypes.SET_FOCUSABLE, id })
-          elements.current.get(id)?.focus()
+          dispatch({
+            type: TreeActionTypes.SET_FOCUSABLE,
+            id: nextId,
+          })
+          elements.current.get(nextId)?.focus()
         }
       },
       onFocus: function (event: FocusEvent) {

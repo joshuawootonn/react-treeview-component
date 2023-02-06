@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Folder, File, Arrow } from 'components/common/icons'
-import { TreeNodeType } from 'lib/common/types'
 import { useTreeNode } from 'lib/array-version/useTreeNode'
 
 type TreeNodeProps = {
   id: string
+  depth?: number
 }
 
-export function TreeNode({ id }: TreeNodeProps) {
+export function TreeNode({ id, depth = 0 }: TreeNodeProps) {
   const {
     isOpen,
     isFocused,
@@ -25,6 +25,7 @@ export function TreeNode({ id }: TreeNodeProps) {
         'relative cursor-pointer select-none flex flex-col focus:outline-none',
       )}
       {...getTreeNodeProps()}
+      data-tree-lad
     >
       <div
         className={classNames(
@@ -119,11 +120,12 @@ export function TreeNode({ id }: TreeNodeProps) {
             }}
             className="pl-4"
           >
-            {children?.map(childNodeId => {
-              return (
-                <TreeNode key={id + childNodeId} id={childNodeId} />
-              )
-            })}
+            {isOpen &&
+              children?.map(childNodeId => {
+                return (
+                  <TreeNode key={id + childNodeId} id={childNodeId} />
+                )
+              })}
           </motion.ul>
         )}
       </AnimatePresence>

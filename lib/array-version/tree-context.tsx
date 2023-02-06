@@ -2,19 +2,13 @@ import React, {
   Dispatch,
   MutableRefObject,
   ReactNode,
-  RefObject,
   useReducer,
   useRef,
 } from 'react'
 import { MyMap } from 'lib/common/MyMap'
 import { TreeNodeType } from 'lib/common/types'
 import { getInitialTreeState } from './tree-initialization'
-import {
-  TreeActions,
-  treeReducer,
-  TreeState,
-  TREE_ID,
-} from './tree-state'
+import { TreeActions, treeReducer, TreeState } from './tree-state'
 
 export type TreeViewContextType = {
   state: TreeState
@@ -31,7 +25,6 @@ export const TreeViewContext =
 
 type TreeViewProviderProps = {
   children: ({
-    rootIds,
     dispatch,
     treeProps,
   }: {
@@ -40,7 +33,6 @@ type TreeViewProviderProps = {
       ['aria-label']: string
       ['aria-multi-selectable']: 'false'
     }
-    rootIds: string[]
     dispatch: React.Dispatch<TreeActions>
     elements: MutableRefObject<MyMap<string, HTMLElement>>
     state: TreeState
@@ -68,7 +60,6 @@ export function TreeViewProvider({
           'aria-label': label,
           'aria-multi-selectable': 'false',
         },
-        rootIds: state.children.get(TREE_ID) ?? [],
         dispatch,
         elements,
         state,
