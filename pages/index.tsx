@@ -22,7 +22,7 @@ const Home: NextPage = () => {
         <button>Focusable element after tree</button>
       </div> */}
 
-      <h2>Array Single selection</h2>
+      <h2>Treeview</h2>
       <div className="w-[300px] h-[400px] space-y-8 flex flex-col not-prose">
         <button>Focusable element before tree</button>
         <TreeArray />
