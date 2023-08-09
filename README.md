@@ -1,3 +1,3 @@
-This next app was the home for some research I did on writing a treeview in react. 
+# 🚧 This repo has been moved
 
-I eventually rewrote this [in a much simpler way](https://github.com/joshuawootonn/react-components-from-scratch/tree/main/components/treeview) and wrote [a series of blog posts](https://www.joshuawootonn.com/react-treeview-component) explaining what I learned.
+Here is the [new location](https://github.com/joshuawootonn/react-components-from-scratch/tree/main/components/treeview) with all other components I have been working on.
